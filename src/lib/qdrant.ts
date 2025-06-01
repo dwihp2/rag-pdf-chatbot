@@ -54,7 +54,7 @@ export class QdrantService {
     try {
       await this.client.getCollection(COLLECTION_NAME);
       console.log(`Collection '${COLLECTION_NAME}' exists`);
-    } catch (error) {
+    } catch {
       console.log(`Creating collection '${COLLECTION_NAME}'...`);
       await this.client.createCollection(COLLECTION_NAME, {
         vectors: {
