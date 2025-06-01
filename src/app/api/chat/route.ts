@@ -2,11 +2,21 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { streamText } from "ai";
 import { qdrantService } from "@/lib/qdrant";
 import { documentProcessor } from "@/lib/document-processor";
+import { databaseService } from "@/lib/database";
 
 export async function POST(req: Request) {
   try {
-    const { messages } = await req.json();
+    const { messages, chatId } = await req.json();
     const latestMessage = messages[messages.length - 1].content;
+
+    // If chatId is provided, save the user message to database
+    if (chatId) {
+      databaseService.createMessage({
+        chatId,
+        role: 'user',
+        content: latestMessage,
+      });
+    }
 
     console.log("🔍 Searching for relevant documents...");
 
@@ -65,10 +75,26 @@ export async function POST(req: Request) {
       system: systemMessage,
       messages,
       temperature: 0.5,
-      onFinish: async ({ usage }) => {
+      onFinish: async ({ text, usage }) => {
         console.log("✅ Response generated successfully");
         console.log("Token usage:", usage);
         console.log("Sources:", sources.length);
+
+        // Save assistant message to database if chatId is provided
+        if (chatId && text) {
+          databaseService.createMessage({
+            chatId,
+            role: 'assistant',
+            content: text,
+            sources: sources.length > 0 ? sources : undefined,
+          });
+
+          // Generate chat title from first message if it's still "New Chat"
+          const chat = databaseService.getChatById(chatId);
+          if (chat && chat.title === 'New Chat') {
+            databaseService.generateChatTitle(chatId);
+          }
+        }
       },
     });
 
@@ -76,6 +102,7 @@ export async function POST(req: Request) {
     return result.toDataStreamResponse({
       headers: {
         "X-Sources": JSON.stringify({ sources }),
+        "X-Chat-Id": chatId || "",
       },
     });
 

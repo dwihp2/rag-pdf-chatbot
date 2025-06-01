@@ -20,21 +20,30 @@ type Message = {
   sources?: Source[];
 };
 
-export default function ChatInterface() {
+interface ChatInterfaceProps {
+  chatId?: string;
+  initialMessages?: Message[];
+}
+
+export default function ChatInterface({ chatId, initialMessages = [] }: ChatInterfaceProps) {
   const [messageSources, setMessageSources] = useState<Record<string, Source[]>>({});
   const [pendingSources, setPendingSources] = useState<Source[] | null>(null);
-  
-  const { 
+   const { 
     messages, 
     input, 
     handleInputChange, 
-    handleSubmit, 
+    handleSubmit,
+    setMessages,
     status,
     error,
     reload,
     stop
   } = useChat({
     api: "/api/chat",
+    body: {
+      chatId: chatId,
+    },
+    initialMessages: initialMessages,
     onResponse: async (response) => {
       if (!response.ok) {
         toast.error("Failed to get a response. Please try again.");

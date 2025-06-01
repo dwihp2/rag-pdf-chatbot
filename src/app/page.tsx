@@ -1,16 +1,53 @@
 "use client";
 
 import ChatInterface from "@/components/chat-interface";
+import ChatSidebar from "@/components/chat-sidebar";
 import PDFUpload from "@/components/pdf-upload";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
+interface Source {
+  filename: string;
+  page: number;
+  text: string;
+  score?: number;
+}
+
+interface Message {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  sources?: Source[];
+}
+
 export default function Home() {
   const [showUpload, setShowUpload] = useState(true);
+  const [currentChatId, setCurrentChatId] = useState<string | undefined>(undefined);
+  const [chatMessages, setChatMessages] = useState<Message[]>([]);
+  
+  const handleChatSelect = async (chatId: string) => {
+    try {
+      const response = await fetch(`/api/chats/${chatId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setCurrentChatId(chatId);
+        setChatMessages(data.messages || []);
+        setShowUpload(false); // Switch to chat view
+      }
+    } catch (error) {
+      console.error('Error loading chat:', error);
+    }
+  };
+
+  const handleNewChat = () => {
+    setCurrentChatId(undefined);
+    setChatMessages([]);
+    setShowUpload(false); // Switch to chat view
+  };
   
   return (
-    <main className="container mx-auto py-8 px-4">
-      <div className="max-w-4xl mx-auto">
+    <main className="min-h-screen bg-gray-50">
+      <div className="container mx-auto py-8 px-4">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold">PDF RAG Chatbot</h1>
           <p className="text-gray-600 mt-2">
@@ -23,19 +60,44 @@ export default function Home() {
             <Button
               variant={showUpload ? "default" : "outline"}
               onClick={() => setShowUpload(true)}
+              className="rounded-r-none"
             >
               Upload PDFs
             </Button>
             <Button
               variant={!showUpload ? "default" : "outline"}
               onClick={() => setShowUpload(false)}
+              className="rounded-l-none"
             >
               Chat Interface
             </Button>
           </div>
         </div>
         
-        {showUpload ? <PDFUpload /> : <ChatInterface />}
+        <div className="max-w-7xl mx-auto">
+          {showUpload ? (
+            <PDFUpload />
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)]">
+              {/* Chat Sidebar */}
+              <div className="lg:col-span-1">
+                <ChatSidebar
+                  currentChatId={currentChatId}
+                  onChatSelect={handleChatSelect}
+                  onNewChat={handleNewChat}
+                />
+              </div>
+              
+              {/* Chat Interface */}
+              <div className="lg:col-span-3">
+                <ChatInterface 
+                  chatId={currentChatId}
+                  initialMessages={chatMessages}
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </main>
   );
