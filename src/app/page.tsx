@@ -3,8 +3,8 @@
 import ChatSidebar from "@/components/chat-sidebar";
 import PDFUpload from "@/components/pdf-upload";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 // interface Source {
@@ -22,8 +22,13 @@ import { toast } from "sonner";
 // }
 
 export default function Home() {
-  const [showUpload, setShowUpload] = useState(true);
+  const searchParams = useSearchParams();
   const router = useRouter();
+  const [showUpload, setShowUpload] = useState(false);
+  
+  useEffect(() => {
+    setShowUpload(searchParams.has('upload'));
+  }, [searchParams]);
   
   const handleChatSelect = (chatId: string) => {
     router.push(`/chats/${chatId}`);
@@ -50,6 +55,14 @@ export default function Home() {
       toast.error('Failed to create new chat');
     }
   };
+
+  const handleUploadClick = () => {
+    router.push('/?upload');
+  };
+
+  const handleChatClick = () => {
+    router.push('/');
+  };
   
   return (
     <main className="min-h-screen bg-gray-50">
@@ -65,14 +78,14 @@ export default function Home() {
           <div className="inline-flex rounded-md shadow-sm" role="group">
             <Button
               variant={showUpload ? "default" : "outline"}
-              onClick={() => setShowUpload(true)}
+              onClick={handleUploadClick}
               className="rounded-r-none"
             >
               Upload PDFs
             </Button>
             <Button
               variant={!showUpload ? "default" : "outline"}
-              onClick={() => setShowUpload(false)}
+              onClick={handleChatClick}
               className="rounded-l-none"
             >
               Chat Interface
