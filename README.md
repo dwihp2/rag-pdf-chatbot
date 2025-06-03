@@ -52,8 +52,8 @@ ANTHROPIC_API_KEY=your_anthropic_api_key
 COHERE_API_KEY=your_cohere_api_key
 
 # Qdrant Configuration
-QDRANT_URL=http://localhost:6333
-QDRANT_API_KEY=your_qdrant_api_key_if_needed
+NEXT_PUBLIC_QDRANT_URL=http://localhost:6333
+NEXT_PUBLIC_QDRANT_API_KEY=your_NEXT_PUBLIC_QDRANT_API_KEY_if_needed
 ```
 
 4. Start Qdrant server (if running locally)

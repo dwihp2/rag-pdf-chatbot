@@ -8,8 +8,8 @@ export const TOP_K = 5;
 
 // Initialize Qdrant client
 export const qdrant = new QdrantClient({
-  url: process.env.QDRANT_URL || "http://localhost:6333",
-  apiKey: process.env.QDRANT_API_KEY,
+  url: process.env.NEXT_PUBLIC_QDRANT_URL || "http://localhost:6333",
+  apiKey: process.env.NEXT_PUBLIC_QDRANT_API_KEY,
 });
 
 // Initialize embeddings

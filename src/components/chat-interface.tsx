@@ -33,7 +33,6 @@ export default function ChatInterface({ chatId, initialMessages = [] }: ChatInte
     input, 
     handleInputChange, 
     handleSubmit,
-    setMessages,
     status,
     error,
     reload,
