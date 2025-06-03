@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { databaseService } from '@/lib/database';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // GET /api/chats/[id] - Get chat with messages
@@ -13,7 +13,7 @@ export async function GET(
   { params }: RouteParams
 ) {
   try {
-    const chatId = params.id;
+    const { id: chatId } = await params;
 
     const chat = databaseService.getChatById(chatId);
     if (!chat) {
@@ -47,7 +47,7 @@ export async function PUT(
   { params }: RouteParams
 ) {
   try {
-    const chatId = params.id;
+    const { id: chatId } = await params;
     const body = await request.json();
     const { title } = body;
 
@@ -83,7 +83,7 @@ export async function DELETE(
   { params }: RouteParams
 ) {
   try {
-    const chatId = params.id;
+    const { id: chatId } = await params;
 
     const success = databaseService.deleteChat(chatId);
     if (!success) {
