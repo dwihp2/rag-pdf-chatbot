@@ -26,7 +26,7 @@ export interface CreateMessageData {
   chatId: string;
   role: 'user' | 'assistant';
   content: string;
-  sources?: any[];
+  sources?: unknown[];
 }
 
 class DatabaseService {

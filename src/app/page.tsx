@@ -1,48 +1,54 @@
 "use client";
 
-import ChatInterface from "@/components/chat-interface";
 import ChatSidebar from "@/components/chat-sidebar";
 import PDFUpload from "@/components/pdf-upload";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
-interface Source {
-  filename: string;
-  page: number;
-  text: string;
-  score?: number;
-}
+// interface Source {
+//   filename: string;
+//   page: number;
+//   text: string;
+//   score?: number;
+// }
 
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  sources?: Source[];
-}
+// interface Message {
+//   id: string;
+//   role: "user" | "assistant";
+//   content: string;
+//   sources?: Source[];
+// }
 
 export default function Home() {
   const [showUpload, setShowUpload] = useState(true);
-  const [currentChatId, setCurrentChatId] = useState<string | undefined>(undefined);
-  const [chatMessages, setChatMessages] = useState<Message[]>([]);
+  const router = useRouter();
   
-  const handleChatSelect = async (chatId: string) => {
-    try {
-      const response = await fetch(`/api/chats/${chatId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setCurrentChatId(chatId);
-        setChatMessages(data.messages || []);
-        setShowUpload(false); // Switch to chat view
-      }
-    } catch (error) {
-      console.error('Error loading chat:', error);
-    }
+  const handleChatSelect = (chatId: string) => {
+    router.push(`/chats/${chatId}`);
   };
 
-  const handleNewChat = () => {
-    setCurrentChatId(undefined);
-    setChatMessages([]);
-    setShowUpload(false); // Switch to chat view
+  const handleNewChat = async () => {
+    try {
+      const response = await fetch('/api/chats', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: 'New Chat' }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        router.push(`/chats/${data.chat.id}`);
+      } else {
+        toast.error('Failed to create new chat');
+      }
+    } catch (error) {
+      console.error('Error creating chat:', error);
+      toast.error('Failed to create new chat');
+    }
   };
   
   return (
@@ -82,18 +88,26 @@ export default function Home() {
               {/* Chat Sidebar */}
               <div className="lg:col-span-1">
                 <ChatSidebar
-                  currentChatId={currentChatId}
                   onChatSelect={handleChatSelect}
                   onNewChat={handleNewChat}
                 />
               </div>
               
-              {/* Chat Interface */}
+              {/* New Chat Interface */}
               <div className="lg:col-span-3">
-                <ChatInterface 
-                  chatId={currentChatId}
-                  initialMessages={chatMessages}
-                />
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <h2 className="text-xl font-semibold text-gray-700 mb-4">
+                      Start a New Conversation
+                    </h2>
+                    <p className="text-gray-600 mb-6">
+                      Select a chat from the sidebar or create a new one to begin
+                    </p>
+                    <Button onClick={handleNewChat}>
+                      Create New Chat
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
