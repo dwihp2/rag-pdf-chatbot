@@ -3,6 +3,9 @@
 import ChatInterface from "@/components/chat-interface";
 import ChatSidebar from "@/components/chat-sidebar";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ArrowLeft, Menu, Plus } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -32,11 +35,12 @@ export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
   const chatId = params.id as string;
-  
+
   const [chat, setChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
-  
+  const [sheetOpen, setSheetOpen] = useState(false);
+
   useEffect(() => {
     const loadChat = async () => {
       try {
@@ -65,10 +69,12 @@ export default function ChatPage() {
   }, [chatId, router]);
 
   const handleChatSelect = (selectedChatId: string) => {
+    setSheetOpen(false); // Close sheet on mobile
     router.push(`/chats/${selectedChatId}`);
   };
 
   const handleNewChat = () => {
+    setSheetOpen(false); // Close sheet on mobile
     router.push('/');
   };
 
@@ -78,7 +84,7 @@ export default function ChatPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen">
         <div className="container mx-auto py-8 px-4">
           <div className="mb-8 text-center">
             <h1 className="text-3xl font-bold">PDF RAG Chatbot</h1>
@@ -93,39 +99,68 @@ export default function ChatPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="">
       <div className="container mx-auto py-8 px-4">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold">PDF RAG Chatbot</h1>
+          <div className="flex items-center justify-center mb-4">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <ArrowLeft className="inline-block mr-4 cursor-pointer" onClick={handleBackToHome} />
+              </TooltipTrigger>
+              <TooltipContent>
+                Back to Home
+              </TooltipContent>
+            </Tooltip>
+
+            <h1 className="text-3xl font-bold">PDF RAG Chatbot</h1>
+          </div>
           <p className="text-gray-600 mt-2">
             {chat ? `Chat: ${chat.title}` : "Chat with your documents"}
           </p>
         </div>
-        
-        <div className="mb-6 flex justify-center">
-          <Button
-            variant="outline"
-            onClick={handleBackToHome}
-            className="mr-2"
-          >
-            ← Back to Home
-          </Button>
-        </div>
-        
+
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)]">
-            {/* Chat Sidebar */}
-            <div className="lg:col-span-1">
-              <ChatSidebar
-                currentChatId={chatId}
-                onChatSelect={handleChatSelect}
-                onNewChat={handleNewChat}
-              />
+          <div className="flex flex-col gap-6 h-[calc(100vh-200px)]">
+            {/* Sidebar trigger for all screen sizes */}
+            <div className="flex justify-start">
+              <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Menu className="h-4 w-4 mr-2" />
+                    Chat History
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-80 sm:w-96 p-0">
+                  <div className="flex flex-col h-full">
+                    <div className="p-4 border-b">
+                      <div className="flex items-center justify-between">
+                        <SheetTitle>Chat History</SheetTitle>
+                        <Button
+                          onClick={handleNewChat}
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <div className="h-full p-4">
+                        <ChatSidebar
+                          currentChatId={chatId}
+                          onChatSelect={handleChatSelect}
+                          onNewChat={handleNewChat}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
             </div>
-            
+
             {/* Chat Interface */}
-            <div className="lg:col-span-3">
-              <ChatInterface 
+            <div className="flex-1">
+              <ChatInterface
                 chatId={chatId}
                 initialMessages={messages}
               />

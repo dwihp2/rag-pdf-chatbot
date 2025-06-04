@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { MessageSquare, Plus, Trash2, Edit3, Check, X } from 'lucide-react';
+import { MessageSquare, Trash2, Edit3, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Chat {
@@ -45,33 +44,9 @@ export default function ChatSidebar({ currentChatId, onChatSelect, onNewChat }: 
     fetchChats();
   }, []);
 
-  const handleNewChat = async () => {
-    try {
-      const response = await fetch('/api/chats', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ title: 'New Chat' }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setChats(prev => [data.chat, ...prev]);
-        onNewChat();
-        onChatSelect(data.chat.id);
-      } else {
-        toast.error('Failed to create new chat');
-      }
-    } catch (error) {
-      console.error('Error creating chat:', error);
-      toast.error('Failed to create new chat');
-    }
-  };
-
   const handleDeleteChat = async (chatId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     if (!confirm('Are you sure you want to delete this chat?')) {
       return;
     }
@@ -116,7 +91,7 @@ export default function ChatSidebar({ currentChatId, onChatSelect, onNewChat }: 
 
       if (response.ok) {
         const data = await response.json();
-        setChats(prev => prev.map(chat => 
+        setChats(prev => prev.map(chat =>
           chat.id === editingId ? data.chat : chat
         ));
         setEditingId(null);
@@ -155,49 +130,33 @@ export default function ChatSidebar({ currentChatId, onChatSelect, onNewChat }: 
 
   if (loading) {
     return (
-      <Card className="h-full">
-        <CardContent className="p-4">
-          <div className="animate-pulse space-y-2">
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="h-full flex items-center justify-center">
+        <div className="animate-pulse space-y-2 w-full max-w-sm">
+          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-lg">Chat History</h3>
-          <Button
-            onClick={handleNewChat}
-            size="sm"
-            className="h-8 w-8 p-0"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="flex-1 overflow-y-auto p-4 pt-0 space-y-2">
+    <div className="h-full overflow-y-auto">
+      <div className="space-y-2">
         {chats.length === 0 ? (
-          <div className="text-center text-gray-500 mt-8">
-            <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No chats yet</p>
-            <p className="text-xs text-gray-400 mt-1">Start a new conversation</p>
+          <div className="text-center text-gray-500 py-12">
+            <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-30" />
+            <p className="text-sm font-medium">No chats yet</p>
+            <p className="text-xs text-gray-400 mt-1">Create your first conversation</p>
           </div>
         ) : (
           chats.map((chat) => (
             <div
               key={chat.id}
-              className={`group p-3 rounded-lg border cursor-pointer transition-colors hover:bg-gray-50 ${
-                currentChatId === chat.id 
-                  ? 'bg-blue-50 border-blue-200' 
-                  : 'border-gray-200'
-              }`}
+              className={`group p-3 rounded-lg border cursor-pointer transition-all duration-200 hover:bg-gray-50 hover:shadow-sm ${currentChatId === chat.id
+                ? 'bg-blue-50 border-blue-200 shadow-sm'
+                : 'border-gray-200'
+                }`}
               onClick={() => onChatSelect(chat.id)}
             >
               <div className="flex items-start justify-between gap-2">
@@ -214,62 +173,62 @@ export default function ChatSidebar({ currentChatId, onChatSelect, onNewChat }: 
                             handleCancelEdit();
                           }
                         }}
-                        className="h-6 text-sm"
+                        className="h-7 text-sm"
                         autoFocus
                         onClick={(e) => e.stopPropagation()}
                       />
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-6 w-6 p-0"
+                        className="h-7 w-7 p-0 hover:bg-green-100"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleSaveEdit();
                         }}
                       >
-                        <Check className="h-3 w-3" />
+                        <Check className="h-3 w-3 text-green-600" />
                       </Button>
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-6 w-6 p-0"
+                        className="h-7 w-7 p-0 hover:bg-red-100"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleCancelEdit();
                         }}
                       >
-                        <X className="h-3 w-3" />
+                        <X className="h-3 w-3 text-red-600" />
                       </Button>
                     </div>
                   ) : (
                     <>
-                      <h4 className="font-medium text-sm truncate">
+                      <h4 className="font-medium text-sm truncate mb-1">
                         {chat.title}
                       </h4>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-gray-500">
                         {formatDate(chat.updatedAt)}
                       </p>
                     </>
                   )}
                 </div>
-                
+
                 {editingId !== chat.id && (
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-6 w-6 p-0"
+                      className="h-7 w-7 p-0 hover:bg-blue-100"
                       onClick={(e) => handleStartEdit(chat, e)}
                     >
-                      <Edit3 className="h-3 w-3" />
+                      <Edit3 className="h-3 w-3 text-blue-600" />
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                      className="h-7 w-7 p-0 hover:bg-red-100"
                       onClick={(e) => handleDeleteChat(chat.id, e)}
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 className="h-3 w-3 text-red-600" />
                     </Button>
                   </div>
                 )}
@@ -277,7 +236,7 @@ export default function ChatSidebar({ currentChatId, onChatSelect, onNewChat }: 
             </div>
           ))
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
