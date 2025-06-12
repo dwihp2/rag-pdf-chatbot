@@ -4,7 +4,7 @@ import { databaseService } from '@/lib/database';
 // GET /api/chats - Get all chats
 export async function GET() {
   try {
-    const chats = databaseService.getAllChats();
+    const chats = await databaseService.getAllChats();
     return NextResponse.json({ chats });
   } catch (error) {
     console.error('Error fetching chats:', error);
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { title } = body;
 
-    const chat = databaseService.createChat({ title });
+    const chat = await databaseService.createChat({ title });
     return NextResponse.json({ chat }, { status: 201 });
   } catch (error) {
     console.error('Error creating chat:', error);
@@ -45,7 +45,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const success = databaseService.deleteChat(chatId);
+    const success = await databaseService.deleteChat(chatId);
     if (!success) {
       return NextResponse.json(
         { error: 'Chat not found' },

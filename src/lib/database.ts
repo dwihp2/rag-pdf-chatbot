@@ -1,22 +1,4 @@
-import Database from 'better-sqlite3';
-import { v4 as uuidv4 } from 'uuid';
-import path from 'path';
-
-export interface Chat {
-  id: string;
-  title: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Message {
-  id: string;
-  chatId: string;
-  role: 'user' | 'assistant';
-  content: string;
-  sources?: string; // JSON string of sources
-  createdAt: string;
-}
+import { PrismaClient } from '@prisma/client';
 
 export interface CreateChatData {
   title?: string;
@@ -26,238 +8,177 @@ export interface CreateMessageData {
   chatId: string;
   role: 'user' | 'assistant';
   content: string;
-  sources?: unknown[];
+  sources?: Array<{
+    filename: string;
+    page: number;
+    text: string;
+    score: number;
+  }>;
 }
 
 class DatabaseService {
-  private db: Database.Database;
+  private prisma: PrismaClient;
 
   constructor() {
-    // Create database in the project root for development
-    const dbPath = path.join(process.cwd(), 'chat_history.db');
-    this.db = new Database(dbPath);
-    this.initializeTables();
-  }
-
-  private initializeTables() {
-    // Create chats table
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS chats (
-        id TEXT PRIMARY KEY,
-        title TEXT NOT NULL,
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL
-      )
-    `);
-
-    // Create messages table
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS messages (
-        id TEXT PRIMARY KEY,
-        chat_id TEXT NOT NULL,
-        role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
-        content TEXT NOT NULL,
-        sources TEXT, -- JSON string
-        created_at TEXT NOT NULL,
-        FOREIGN KEY (chat_id) REFERENCES chats (id) ON DELETE CASCADE
-      )
-    `);
-
-    // Create indexes for better performance
-    this.db.exec(`
-      CREATE INDEX IF NOT EXISTS idx_messages_chat_id ON messages (chat_id);
-      CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages (created_at);
-      CREATE INDEX IF NOT EXISTS idx_chats_updated_at ON chats (updated_at);
-    `);
+    this.prisma = new PrismaClient();
   }
 
   // Chat operations
-  createChat(data: CreateChatData = {}): Chat {
-    const now = new Date().toISOString();
-    const chat: Chat = {
-      id: uuidv4(),
-      title: data.title || 'New Chat',
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    const stmt = this.db.prepare(`
-      INSERT INTO chats (id, title, created_at, updated_at)
-      VALUES (?, ?, ?, ?)
-    `);
-
-    stmt.run(chat.id, chat.title, chat.createdAt, chat.updatedAt);
-    return chat;
+  async createChat(data: CreateChatData = {}) {
+    return await this.prisma.chat.create({
+      data: {
+        title: data.title || 'New Chat',
+      },
+    });
   }
 
-  getAllChats(): Chat[] {
-    const stmt = this.db.prepare(`
-      SELECT id, title, created_at as createdAt, updated_at as updatedAt
-      FROM chats
-      ORDER BY updated_at DESC
-    `);
-
-    return stmt.all() as Chat[];
+  async getAllChats() {
+    return await this.prisma.chat.findMany({
+      orderBy: {
+        updatedAt: 'desc',
+      },
+    });
   }
 
-  getChatById(id: string): Chat | null {
-    const stmt = this.db.prepare(`
-      SELECT id, title, created_at as createdAt, updated_at as updatedAt
-      FROM chats
-      WHERE id = ?
-    `);
-
-    return stmt.get(id) as Chat | null;
+  async getChatById(id: string) {
+    return await this.prisma.chat.findUnique({
+      where: { id },
+    });
   }
 
-  updateChatTitle(id: string, title: string): boolean {
-    const stmt = this.db.prepare(`
-      UPDATE chats
-      SET title = ?, updated_at = ?
-      WHERE id = ?
-    `);
-
-    const result = stmt.run(title, new Date().toISOString(), id);
-    return result.changes > 0;
+  async updateChatTitle(id: string, title: string) {
+    try {
+      await this.prisma.chat.update({
+        where: { id },
+        data: { title },
+      });
+      return true;
+    } catch (error) {
+      console.error('Error updating chat title:', error);
+      return false;
+    }
   }
 
-  deleteChat(id: string): boolean {
-    const stmt = this.db.prepare('DELETE FROM chats WHERE id = ?');
-    const result = stmt.run(id);
-    return result.changes > 0;
+  async deleteChat(id: string) {
+    try {
+      await this.prisma.chat.delete({
+        where: { id },
+      });
+      return true;
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+      return false;
+    }
   }
 
   // Message operations
-  createMessage(data: CreateMessageData): Message {
-    const now = new Date().toISOString();
-    const message: Message = {
-      id: uuidv4(),
-      chatId: data.chatId,
-      role: data.role,
-      content: data.content,
-      sources: data.sources ? JSON.stringify(data.sources) : undefined,
-      createdAt: now,
-    };
-
-    const stmt = this.db.prepare(`
-      INSERT INTO messages (id, chat_id, role, content, sources, created_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `);
-
-    stmt.run(
-      message.id,
-      message.chatId,
-      message.role,
-      message.content,
-      message.sources,
-      message.createdAt
-    );
-
-    // Update chat's updated_at timestamp
-    this.updateChatTimestamp(data.chatId);
-
-    return message;
+  async createMessage(data: CreateMessageData) {
+    return await this.prisma.message.create({
+      data: {
+        chatId: data.chatId,
+        role: data.role,
+        content: data.content,
+        sources: data.sources || undefined,
+      },
+    });
   }
 
-  getMessagesByChatId(chatId: string): Message[] {
-    const stmt = this.db.prepare(`
-      SELECT id, chat_id as chatId, role, content, sources, created_at as createdAt
-      FROM messages
-      WHERE chat_id = ?
-      ORDER BY created_at ASC
-    `);
-
-    const messages = stmt.all(chatId) as Message[];
-
-    // Parse sources JSON for each message
-    return messages.map(message => ({
-      ...message,
-      sources: message.sources ? message.sources : undefined,
-    }));
+  async getMessagesByChatId(chatId: string) {
+    return await this.prisma.message.findMany({
+      where: { chatId },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
   }
 
-  deleteMessage(id: string): boolean {
-    const stmt = this.db.prepare('DELETE FROM messages WHERE id = ?');
-    const result = stmt.run(id);
-    return result.changes > 0;
+  async deleteMessage(id: string) {
+    try {
+      await this.prisma.message.delete({
+        where: { id },
+      });
+      return true;
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      return false;
+    }
   }
 
-  // Get recent messages across all chats for search/reference
-  getRecentMessages(limit: number = 50): Message[] {
-    const stmt = this.db.prepare(`
-      SELECT id, chat_id as chatId, role, content, sources, created_at as createdAt
-      FROM messages
-      ORDER BY created_at DESC
-      LIMIT ?
-    `);
-
-    return stmt.all(limit) as Message[];
+  async getRecentMessages(limit: number = 50) {
+    return await this.prisma.message.findMany({
+      take: limit,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
   }
 
-  // Helper method to update chat timestamp
-  private updateChatTimestamp(chatId: string): void {
-    const stmt = this.db.prepare(`
-      UPDATE chats
-      SET updated_at = ?
-      WHERE id = ?
-    `);
-
-    stmt.run(new Date().toISOString(), chatId);
+  // Helper method to update chat timestamp (Prisma handles this automatically with @updatedAt)
+  private async updateChatTimestamp(chatId: string) {
+    await this.prisma.chat.update({
+      where: { id: chatId },
+      data: {}, // Empty update to trigger @updatedAt
+    });
   }
 
   // Generate chat title from first user message
-  generateChatTitle(chatId: string): boolean {
-    const firstMessage = this.db.prepare(`
-      SELECT content
-      FROM messages
-      WHERE chat_id = ? AND role = 'user'
-      ORDER BY created_at ASC
-      LIMIT 1
-    `).get(chatId) as { content: string } | undefined;
+  async generateChatTitle(chatId: string) {
+    const firstMessage = await this.prisma.message.findFirst({
+      where: {
+        chatId,
+        role: 'user',
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
 
     if (firstMessage) {
-      // Take first 50 characters as title
       const title = firstMessage.content.length > 50
         ? firstMessage.content.substring(0, 50) + '...'
         : firstMessage.content;
 
-      return this.updateChatTitle(chatId, title);
+      return await this.updateChatTitle(chatId, title);
     }
 
     return false;
   }
 
-  // Database maintenance
-  close(): void {
-    this.db.close();
-  }
-
-  // Get database statistics
-  getStats() {
-    const chatCount = this.db.prepare('SELECT COUNT(*) as count FROM chats').get() as { count: number };
-    const messageCount = this.db.prepare('SELECT COUNT(*) as count FROM messages').get() as { count: number };
+  // Database statistics
+  async getStats() {
+    const [chatCount, messageCount] = await Promise.all([
+      this.prisma.chat.count(),
+      this.prisma.message.count(),
+    ]);
 
     return {
-      totalChats: chatCount.count,
-      totalMessages: messageCount.count,
+      totalChats: chatCount,
+      totalMessages: messageCount,
     };
+  }
+
+  // Graceful shutdown
+  async close() {
+    await this.prisma.$disconnect();
   }
 }
 
 // Create singleton instance
 export const databaseService = new DatabaseService();
 
-// Graceful shutdown
-process.on('exit', () => {
-  databaseService.close();
-});
+// Graceful shutdown handlers
+if (typeof process !== 'undefined') {
+  process.on('exit', async () => {
+    await databaseService.close();
+  });
 
-process.on('SIGINT', () => {
-  databaseService.close();
-  process.exit(0);
-});
+  process.on('SIGINT', async () => {
+    await databaseService.close();
+    process.exit(0);
+  });
 
-process.on('SIGTERM', () => {
-  databaseService.close();
-  process.exit(0);
-});
+  process.on('SIGTERM', async () => {
+    await databaseService.close();
+    process.exit(0);
+  });
+}

@@ -15,7 +15,7 @@ export async function GET(
   try {
     const { id: chatId } = await params;
 
-    const chat = databaseService.getChatById(chatId);
+    const chat = await databaseService.getChatById(chatId);
     if (!chat) {
       return NextResponse.json(
         { error: 'Chat not found' },
@@ -23,13 +23,13 @@ export async function GET(
       );
     }
 
-    const messages = databaseService.getMessagesByChatId(chatId);
+    const messages = await databaseService.getMessagesByChatId(chatId);
 
     return NextResponse.json({
       chat,
       messages: messages.map(msg => ({
         ...msg,
-        sources: msg.sources ? JSON.parse(msg.sources) : undefined,
+        sources: msg.sources || undefined,
       })),
     });
   } catch (error) {
@@ -58,7 +58,7 @@ export async function PUT(
       );
     }
 
-    const success = databaseService.updateChatTitle(chatId, title);
+    const success = await databaseService.updateChatTitle(chatId, title);
     if (!success) {
       return NextResponse.json(
         { error: 'Chat not found' },
@@ -66,7 +66,7 @@ export async function PUT(
       );
     }
 
-    const updatedChat = databaseService.getChatById(chatId);
+    const updatedChat = await databaseService.getChatById(chatId);
     return NextResponse.json({ chat: updatedChat });
   } catch (error) {
     console.error('Error updating chat:', error);
@@ -85,7 +85,7 @@ export async function DELETE(
   try {
     const { id: chatId } = await params;
 
-    const success = databaseService.deleteChat(chatId);
+    const success = await databaseService.deleteChat(chatId);
     if (!success) {
       return NextResponse.json(
         { error: 'Chat not found' },

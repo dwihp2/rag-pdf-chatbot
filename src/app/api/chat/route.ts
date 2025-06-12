@@ -9,20 +9,15 @@ export async function POST(req: Request) {
     const { messages, chatId } = await req.json();
     const latestMessage = messages[messages.length - 1].content;
 
-    let activeChatId = chatId;
-
-    // If no chatId is provided, create a new chat
-    if (!activeChatId) {
-      const newChat = databaseService.createChat({ title: 'New Chat' });
-      activeChatId = newChat.id;
+    // Save user message to database if chatId is provided
+    const activeChatId = chatId;
+    if (activeChatId && latestMessage) {
+      await databaseService.createMessage({
+        chatId: activeChatId,
+        role: 'user',
+        content: latestMessage,
+      });
     }
-
-    // Save the user message to database
-    databaseService.createMessage({
-      chatId: activeChatId,
-      role: 'user',
-      content: latestMessage,
-    });
 
     console.log("🔍 Searching for relevant documents...");
 
@@ -124,7 +119,7 @@ export async function POST(req: Request) {
 
         // Save assistant message to database
         if (activeChatId && text) {
-          databaseService.createMessage({
+          await databaseService.createMessage({
             chatId: activeChatId,
             role: 'assistant',
             content: text,
@@ -132,9 +127,9 @@ export async function POST(req: Request) {
           });
 
           // Generate chat title from first message if it's still "New Chat"
-          const chat = databaseService.getChatById(activeChatId);
+          const chat = await databaseService.getChatById(activeChatId);
           if (chat && chat.title === 'New Chat') {
-            databaseService.generateChatTitle(activeChatId);
+            await databaseService.generateChatTitle(activeChatId);
           }
         }
       },
