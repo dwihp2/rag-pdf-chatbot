@@ -44,17 +44,45 @@ class DatabaseService {
   }
 
   async getAllChats() {
-    return await this.prisma.chat.findMany({
-      orderBy: {
-        updatedAt: 'desc',
-      },
-    });
+    try {
+      return await this.prisma.chat.findMany({
+        orderBy: {
+          updatedAt: 'desc',
+        },
+      });
+    } catch (error) {
+      console.error('Error getting all chats:', error);
+      if (error && typeof error === 'object' && 'message' in error &&
+        typeof error.message === 'string' && error.message.includes('prepared statement')) {
+        await this.prisma.$disconnect();
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return await this.prisma.chat.findMany({
+          orderBy: {
+            updatedAt: 'desc',
+          },
+        });
+      }
+      throw error;
+    }
   }
 
   async getChatById(id: string) {
-    return await this.prisma.chat.findUnique({
-      where: { id },
-    });
+    try {
+      return await this.prisma.chat.findUnique({
+        where: { id },
+      });
+    } catch (error) {
+      console.error('Error getting chat by ID:', error);
+      if (error && typeof error === 'object' && 'message' in error &&
+        typeof error.message === 'string' && error.message.includes('prepared statement')) {
+        await this.prisma.$disconnect();
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return await this.prisma.chat.findUnique({
+          where: { id },
+        });
+      }
+      throw error;
+    }
   }
 
   async updateChatTitle(id: string, title: string) {
@@ -84,23 +112,65 @@ class DatabaseService {
 
   // Message operations
   async createMessage(data: CreateMessageData) {
-    return await this.prisma.message.create({
-      data: {
-        chatId: data.chatId,
-        role: data.role,
-        content: data.content,
-        sources: data.sources || undefined,
-      },
-    });
+    try {
+      return await this.prisma.message.create({
+        data: {
+          chatId: data.chatId,
+          role: data.role,
+          content: data.content,
+          sources: data.sources || undefined,
+        },
+      });
+    } catch (error) {
+      console.error('Error creating message:', error);
+      // For prepared statement errors, try disconnecting and reconnecting
+      if (error && typeof error === 'object' && 'message' in error &&
+        typeof error.message === 'string' && error.message.includes('prepared statement')) {
+        console.log('Prepared statement conflict detected in createMessage, attempting to reconnect...');
+        await this.prisma.$disconnect();
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        try {
+          return await this.prisma.message.create({
+            data: {
+              chatId: data.chatId,
+              role: data.role,
+              content: data.content,
+              sources: data.sources || undefined,
+            },
+          });
+        } catch (retryError) {
+          console.error('Retry failed for createMessage:', retryError);
+          throw retryError;
+        }
+      }
+      throw error;
+    }
   }
 
   async getMessagesByChatId(chatId: string) {
-    return await this.prisma.message.findMany({
-      where: { chatId },
-      orderBy: {
-        createdAt: 'asc',
-      },
-    });
+    try {
+      return await this.prisma.message.findMany({
+        where: { chatId },
+        orderBy: {
+          createdAt: 'asc',
+        },
+      });
+    } catch (error) {
+      console.error('Error getting messages by chat ID:', error);
+      if (error && typeof error === 'object' && 'message' in error &&
+        typeof error.message === 'string' && error.message.includes('prepared statement')) {
+        await this.prisma.$disconnect();
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return await this.prisma.message.findMany({
+          where: { chatId },
+          orderBy: {
+            createdAt: 'asc',
+          },
+        });
+      }
+      throw error;
+    }
   }
 
   async deleteMessage(id: string) {
