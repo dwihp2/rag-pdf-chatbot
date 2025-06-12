@@ -28,8 +28,9 @@ NEXT_PUBLIC_QDRANT_API_KEY="your-qdrant-api-key"
 1. Push your code to GitHub
 2. Connect repository to Vercel
 3. Vercel will automatically:
-   - Run `npm install && prisma generate` (install command)
-   - Run `prisma generate && next build` (build command)
+   - Run `npm install` (install dependencies)
+   - Run `npx prisma generate` (postinstall hook)
+   - Run `npx prisma generate && next build` (build command)
    - Deploy your application
 
 ### 2. Manual Deployment via CLI
@@ -52,8 +53,8 @@ The following configurations ensure Prisma works correctly on Vercel:
 ```json
 {
   "scripts": {
-    "build": "prisma generate && next build",
-    "postinstall": "prisma generate"
+    "build": "npx prisma generate && next build",
+    "postinstall": "npx prisma generate"
   }
 }
 ```
@@ -61,8 +62,7 @@ The following configurations ensure Prisma works correctly on Vercel:
 ### 2. Vercel.json Configuration
 ```json
 {
-  "buildCommand": "prisma generate && next build",
-  "installCommand": "npm install && prisma generate"
+  "buildCommand": "npx prisma generate && next build"
 }
 ```
 
@@ -104,16 +104,21 @@ git push
 
 ### Common Issues
 
-1. **"Prisma Client not generated"**
-   - Solution: Ensure `postinstall` script runs `prisma generate`
+1. **"prisma: command not found"**
+   - Solution: Use `npx prisma` instead of `prisma` in all scripts
+   - Update `vercel.json` to use `npx prisma generate`
+   - Ensure scripts use `npx` prefix
+
+2. **"Prisma Client not generated"**
+   - Solution: Ensure `postinstall` script runs `npx prisma generate`
    - Check environment variables are set correctly
 
-2. **"Cannot connect to database"**
+3. **"Cannot connect to database"**
    - Verify `DATABASE_URL` and `DIRECT_URL` are correct
    - Ensure Supabase project is running
    - Check if database exists
 
-3. **"Build failed"**
+4. **"Build failed"**
    - Check build logs in Vercel dashboard
    - Ensure all dependencies are in `dependencies` not `devDependencies`
 
@@ -129,8 +134,11 @@ npx prisma db push
 # View generated client
 npx prisma studio
 
-# Check environment variables
+# Check Prisma version and installation
 npx prisma --version
+
+# Generate Prisma client manually
+npx prisma generate
 ```
 
 ## Performance Optimization
