@@ -4,8 +4,8 @@
 export const neonConfig = {
   // Database URLs
   database: {
-    url: process.env.NEON_DATABASE_URL || process.env.DATABASE_URL,
-    directUrl: process.env.NEON_DIRECT_URL || process.env.DIRECT_URL,
+    url: process.env.DATABASE_URL,
+    directUrl: process.env.DIRECT_URL,
     unpooledUrl: process.env.NEON_DATABASE_URL_UNPOOLED,
   },
 
@@ -35,18 +35,18 @@ export const neonConfig = {
   getConnectionString: (type: 'pooled' | 'direct' | 'unpooled' = 'pooled') => {
     switch (type) {
       case 'direct':
-        return process.env.NEON_DIRECT_URL || process.env.DIRECT_URL;
+        return process.env.DIRECT_URL;
       case 'unpooled':
         return process.env.NEON_DATABASE_URL_UNPOOLED;
       case 'pooled':
       default:
-        return process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
+        return process.env.DATABASE_URL;
     }
   },
 
   // Check if Neon configuration is available
   isConfigured: () => {
-    return !!(process.env.NEON_DATABASE_URL || process.env.DATABASE_URL);
+    return !!(process.env.DATABASE_URL);
   },
 
   // Check if Stack Auth is configured
