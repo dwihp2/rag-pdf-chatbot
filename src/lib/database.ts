@@ -1,6 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 
 // Global Prisma instance for serverless environments
+// Uses DATABASE_URL and DIRECT_URL from environment variables
+// For Neon-specific configurations, see ./neon-config.ts
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };

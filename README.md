@@ -94,6 +94,16 @@ ANTHROPIC_API_KEY=your_anthropic_api_key_here
 # Qdrant Configuration
 NEXT_PUBLIC_QDRANT_URL=http://localhost:6333
 NEXT_PUBLIC_QDRANT_API_KEY=your_qdrant_api_key_if_needed
+
+# Neon Database Configuration (if using Neon)
+NEON_DATABASE_URL=your_neon_database_url
+NEON_DIRECT_URL=your_neon_direct_url
+NEON_DATABASE_URL_UNPOOLED=your_neon_unpooled_url
+
+# Neon Stack Auth (optional)
+NEON_NEXT_PUBLIC_STACK_PROJECT_ID=your_project_id
+NEON_NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY=your_publishable_key
+NEON_STACK_SECRET_SERVER_KEY=your_secret_key
 ```
 
 #### 4. Database Setup
@@ -151,10 +161,34 @@ DATABASE_URL="postgresql://your_username@localhost:5432/ragchatbot"
 ```
 
 #### Option 2: Cloud PostgreSQL (Recommended)
+- **Neon**: Serverless PostgreSQL with generous free tier
 - **Vercel Postgres**: Easy integration with Vercel deployment
 - **Supabase**: Free tier with 500MB storage
 - **PlanetScale**: MySQL-compatible option
 - **Railway**: Simple PostgreSQL hosting
+
+#### Option 3: Neon Database Setup
+If you're using Neon (recommended for serverless applications):
+
+1. **Create a Neon account**: Visit [Neon Console](https://console.neon.tech/)
+2. **Create a new project** and database
+3. **Get your connection strings** from the Neon dashboard
+4. **Configure environment variables**:
+   ```bash
+   # Primary database URLs (used by Prisma)
+   DATABASE_URL="your_neon_pooled_connection_string"
+   DIRECT_URL="your_neon_direct_connection_string"
+   
+   # Additional Neon-specific variables
+   NEON_DATABASE_URL="your_neon_pooled_connection_string"
+   NEON_DIRECT_URL="your_neon_direct_connection_string"
+   NEON_DATABASE_URL_UNPOOLED="your_neon_unpooled_connection_string"
+   
+   # If using Neon's Stack Auth
+   NEON_NEXT_PUBLIC_STACK_PROJECT_ID="your_project_id"
+   NEON_NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY="your_publishable_key"
+   NEON_STACK_SECRET_SERVER_KEY="your_secret_key"
+   ```
 
 ### Vector Database Setup
 
@@ -200,7 +234,9 @@ curl http://localhost:6333/
 
 ## 🔧 Database Management
 
-The application uses PostgreSQL with Prisma ORM for data persistence. Available database commands:
+The application uses PostgreSQL with Prisma ORM for data persistence. For Neon-specific configurations, see [NEON_CONFIGURATION.md](NEON_CONFIGURATION.md).
+
+Available database commands:
 
 ```bash
 # Generate Prisma client after schema changes
@@ -276,6 +312,7 @@ rag-pdf-chatbot/
 │   └── lib/
 │       ├── database.ts        # Database operations
 │       ├── document-processor.ts # PDF processing
+│       ├── neon-config.ts     # Neon database configuration
 │       ├── qdrant.ts          # Vector database client
 │       └── utils.ts           # Utility functions
 ├── .env.local                 # Environment variables
@@ -325,6 +362,9 @@ User Question → Vector Search → Context Retrieval → AI Processing → Resp
    - `ANTHROPIC_API_KEY`
    - `NEXT_PUBLIC_QDRANT_URL`
    - `NEXT_PUBLIC_QDRANT_API_KEY`
+   - `NEON_DATABASE_URL` (if using Neon)
+   - `NEON_DIRECT_URL` (if using Neon)
+   - Additional Neon variables as needed
 
 5. **Run database migrations**:
    ```bash
