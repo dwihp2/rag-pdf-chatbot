@@ -26,8 +26,8 @@ export const neonConfig = {
 
   // Stack Auth configuration (if using Neon's Stack Auth)
   stackAuth: {
-    projectId: process.env.NEON_NEXT_PUBLIC_STACK_PROJECT_ID,
-    publishableClientKey: process.env.NEON_NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY,
+    projectId: process.env.NEXT_PUBLIC_NEON_STACK_PROJECT_ID,
+    publishableClientKey: process.env.NEXT_PUBLIC_NEON_STACK_PUBLISHABLE_CLIENT_KEY,
     secretServerKey: process.env.NEON_STACK_SECRET_SERVER_KEY,
   },
 
@@ -52,8 +52,8 @@ export const neonConfig = {
   // Check if Stack Auth is configured
   isStackAuthConfigured: () => {
     return !!(
-      process.env.NEON_NEXT_PUBLIC_STACK_PROJECT_ID &&
-      process.env.NEON_NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY &&
+      process.env.NEXT_PUBLIC_NEON_STACK_PROJECT_ID &&
+      process.env.NEXT_PUBLIC_NEON_STACK_PUBLISHABLE_CLIENT_KEY &&
       process.env.NEON_STACK_SECRET_SERVER_KEY
     );
   },

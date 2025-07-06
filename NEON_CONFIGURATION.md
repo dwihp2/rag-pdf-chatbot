@@ -33,8 +33,8 @@ NEON_POSTGRES_URL_NO_SSL="your_neon_postgres_url_no_ssl"
 NEON_POSTGRES_PRISMA_URL="your_neon_postgres_prisma_url"
 
 # Stack Auth (optional)
-NEON_NEXT_PUBLIC_STACK_PROJECT_ID="your_project_id"
-NEON_NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY="your_publishable_key"
+NEXT_PUBLIC_NEON_STACK_PROJECT_ID="your_project_id"
+NEXT_PUBLIC_NEON_STACK_PUBLISHABLE_CLIENT_KEY="your_publishable_key"
 NEON_STACK_SECRET_SERVER_KEY="your_secret_key"
 ```
 

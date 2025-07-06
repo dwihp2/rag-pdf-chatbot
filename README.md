@@ -101,8 +101,8 @@ NEON_DIRECT_URL=your_neon_direct_url
 NEON_DATABASE_URL_UNPOOLED=your_neon_unpooled_url
 
 # Neon Stack Auth (optional)
-NEON_NEXT_PUBLIC_STACK_PROJECT_ID=your_project_id
-NEON_NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY=your_publishable_key
+NEXT_PUBLIC_NEON_STACK_PROJECT_ID=your_project_id
+NEXT_PUBLIC_NEON_STACK_PUBLISHABLE_CLIENT_KEY=your_publishable_key
 NEON_STACK_SECRET_SERVER_KEY=your_secret_key
 ```
 
@@ -185,8 +185,8 @@ If you're using Neon (recommended for serverless applications):
    NEON_DATABASE_URL_UNPOOLED="your_neon_unpooled_connection_string"
    
    # If using Neon's Stack Auth
-   NEON_NEXT_PUBLIC_STACK_PROJECT_ID="your_project_id"
-   NEON_NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY="your_publishable_key"
+   NEXT_PUBLIC_NEON_STACK_PROJECT_ID="your_project_id"
+   NEXT_PUBLIC_NEON_STACK_PUBLISHABLE_CLIENT_KEY="your_publishable_key"
    NEON_STACK_SECRET_SERVER_KEY="your_secret_key"
    ```
 
@@ -364,6 +364,9 @@ User Question → Vector Search → Context Retrieval → AI Processing → Resp
    - `NEXT_PUBLIC_QDRANT_API_KEY`
    - `NEON_DATABASE_URL` (if using Neon)
    - `NEON_DIRECT_URL` (if using Neon)
+   - `NEXT_PUBLIC_NEON_STACK_PROJECT_ID` (if using Stack Auth)
+   - `NEXT_PUBLIC_NEON_STACK_PUBLISHABLE_CLIENT_KEY` (if using Stack Auth)
+   - `NEON_STACK_SECRET_SERVER_KEY` (if using Stack Auth)
    - Additional Neon variables as needed
 
 5. **Run database migrations**:
