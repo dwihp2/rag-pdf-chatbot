@@ -116,7 +116,60 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Custom styles for better mobile chat experience */
+@layer utilities {
+  .prose {
+    @apply max-w-none;
+  }
+
+  .prose p {
+    @apply mb-2 leading-relaxed;
+  }
+
+  .prose ul,
+  .prose ol {
+    @apply mb-2;
+  }
+
+  .prose li {
+    @apply mb-1;
+  }
+
+  .prose code {
+    @apply bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm;
+  }
+
+  .prose pre {
+    @apply bg-gray-100 dark:bg-gray-800 p-3 rounded-md overflow-x-auto;
+  }
+
+  .prose blockquote {
+    @apply border-l-4 border-blue-500 pl-4 italic;
+  }
+
+  /* Chat message animations */
+  .message-enter {
+    @apply animate-in fade-in-0 slide-in-from-bottom-4 duration-300;
+  }
+
+  /* Mobile-specific improvements */
+  @media (max-width: 768px) {
+    .container {
+      @apply px-4;
+    }
+
+    .grid {
+      @apply gap-4;
+    }
+
+    .card {
+      @apply shadow-sm;
+    }
   }
 }

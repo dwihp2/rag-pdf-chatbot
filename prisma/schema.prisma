@@ -45,3 +45,19 @@ enum Role {
   user
   assistant
 }
+
+model Document {
+  id           String   @id @default(cuid())
+  filename     String
+  originalName String   @map("original_name")
+  fileSize     Int      @map("file_size")
+  mimeType     String   @map("mime_type")
+  uploadedAt   DateTime @default(now()) @map("uploaded_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  status       String   @default("processing") // processing, completed, failed
+  vectorId     String?  @map("vector_id") // Reference to Qdrant vector ID
+  summary      String?
+  chunkCount   Int      @default(0) @map("chunk_count")
+
+  @@map("documents")
+}

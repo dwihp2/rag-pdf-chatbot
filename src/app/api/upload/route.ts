@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { qdrantService } from "@/lib/qdrant";
 import { documentProcessor } from "@/lib/document-processor";
+import { prisma } from "@/lib/database";
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,6 +45,24 @@ export async function POST(request: NextRequest) {
     // Upload to Qdrant
     await qdrantService.addDocuments(allChunks);
 
+    // Store document metadata in database
+    const documentMetadata = await Promise.all(
+      processedDocuments.map(async (doc) => {
+        const file = files.find(f => f.name === doc.filename);
+        return prisma.document.create({
+          data: {
+            filename: doc.filename,
+            originalName: file?.name || doc.filename,
+            fileSize: file?.size || 0,
+            mimeType: file?.type || 'application/pdf',
+            chunkCount: doc.totalChunks,
+            summary: `Document with ${doc.totalPages} pages and ${doc.totalChunks} chunks`,
+            status: 'completed',
+          },
+        });
+      })
+    );
+
     // Get collection stats
     const stats = await qdrantService.getStats();
 
@@ -60,6 +79,7 @@ export async function POST(request: NextRequest) {
           pages: doc.totalPages,
           chunks: doc.totalChunks,
         })),
+        documentMetadata: documentMetadata,
         collectionStats: stats,
       }
     });

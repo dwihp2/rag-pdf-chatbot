@@ -5,7 +5,11 @@ import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 
-export default function PDFUpload() {
+interface PDFUploadProps {
+  onUploadComplete?: () => void;
+}
+
+export default function PDFUpload({ onUploadComplete }: PDFUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [files, setFiles] = useState<File[]>([]);
@@ -14,11 +18,11 @@ export default function PDFUpload() {
     const pdfFiles = acceptedFiles.filter(
       file => file.type === "application/pdf"
     );
-    
+
     if (pdfFiles.length !== acceptedFiles.length) {
       toast.error("Only PDF files are allowed");
     }
-    
+
     setFiles(prevFiles => [...prevFiles, ...pdfFiles]);
   }, []);
 
@@ -37,12 +41,12 @@ export default function PDFUpload() {
     }
 
     setUploading(true);
-    
+
     const formData = new FormData();
     files.forEach((file, index) => {
       formData.append(`file-${index}`, file);
     });
-    
+
     try {
       // Simulate progress
       const interval = setInterval(() => {
@@ -54,31 +58,32 @@ export default function PDFUpload() {
           return prev + 5;
         });
       }, 500);
-      
+
       const response = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
-      
+
       clearInterval(interval);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: "Failed to upload files" }));
         throw new Error(errorData.error || "Failed to upload files");
       }
-      
+
       setUploadProgress(100);
-      
+
       setTimeout(() => {
         setUploading(false);
         setUploadProgress(0);
         setFiles([]);
         toast.success("Your PDF files have been processed and indexed");
+        onUploadComplete?.();
       }, 1000);
     } catch (error) {
       console.error("Upload error:", error);
       const errorMessage = error instanceof Error ? error.message : "There was an error processing your files";
-      
+
       if (errorMessage.includes("Rate limit exceeded")) {
         toast.error("⚠️ API Rate Limit Exceeded", {
           description: "You've reached the monthly limit for your Cohere API trial. Please upgrade your plan or wait until next month.",
@@ -87,7 +92,7 @@ export default function PDFUpload() {
       } else {
         toast.error(errorMessage);
       }
-      
+
       setUploading(false);
       setUploadProgress(0);
     }
@@ -102,9 +107,8 @@ export default function PDFUpload() {
       <Card className="p-4">
         <div
           {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-            isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"
-          }`}
+          className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"
+            }`}
         >
           <input {...getInputProps()} />
           <div className="space-y-2">

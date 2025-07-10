@@ -5,8 +5,8 @@ import { Toaster } from "@/components/ui/sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "PDF RAG Chatbot",
-  description: "Chat with your PDFs using RAG technology",
+  title: "RAG PDF Chatbot",
+  description: "AI-powered document chat with RAG capabilities",
 };
 
 export default function RootLayout({
@@ -15,10 +15,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} bg-gray-50 dark:bg-gray-900 min-h-screen`}>
         {children}
-        <Toaster />
+        <Toaster richColors position="top-center" />
       </body>
     </html>
   );
