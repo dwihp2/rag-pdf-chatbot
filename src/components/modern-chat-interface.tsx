@@ -82,10 +82,10 @@ export default function ModernChatInterface({ chatId, initialMessages = [] }: Mo
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          
+
           const chunk = decoder.decode(value, { stream: true });
           const lines = chunk.split('\n');
-          
+
           for (const line of lines) {
             if (line.startsWith('0:')) {
               try {

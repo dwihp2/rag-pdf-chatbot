@@ -25,7 +25,6 @@ export type AIToolProps = ComponentProps<typeof Collapsible> & {
 
 export const AITool = ({
   className,
-  status = 'pending',
   ...props
 }: AIToolProps) => (
   <Collapsible
@@ -67,7 +66,6 @@ export const AIToolHeader = ({
   className,
   status = 'pending',
   name,
-  description,
   ...props
 }: AIToolHeaderProps) => (
   <CollapsibleTrigger
