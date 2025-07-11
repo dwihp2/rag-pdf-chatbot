@@ -19,28 +19,30 @@ Perfect for researchers, students, professionals, and anyone who needs to quickl
 ### Home Page
 ![Home Page](./public/Home%20page.png)
 
+### Knowledge Management
+![Knowledge Management](./public/Knowledge%20management.png)
+
 ### PDF Upload Interface
 ![PDF Upload](./public/PDF%20Upload.png)
 
-### Chat Interface
-![Chat Interface](./public/Chat%20page%20(initial).png)
+### Chat Conversation
+![Chat Conversation](./public/Chat%20conversation.png)
 
-### Conversation with Document Sources
+### Chat with Document Sources
 ![Chat with Sources](./public/Chat%20+%20document%20sources.png)
-
-### Chat History Management
-![Chat History](./public/Chat%20history.png)
 
 ## ✨ Key Features
 
-- 📄 **PDF Upload & Processing**: Upload and process PDF documents with intelligent text extraction
-- 🤖 **AI-Powered Chat**: Chat with your PDFs using Claude 3 Haiku for accurate responses
-- 🔍 **Vector Search**: Semantic search through document content using Qdrant vector database
-- 💾 **Persistent Chat History**: PostgreSQL database for storing chat sessions and messages
-- 📚 **Document Sources**: See which parts of your documents the AI referenced in responses
-- 🎨 **Modern UI**: Clean, responsive interface built with Tailwind CSS and Radix UI
-- 🔄 **Real-time Updates**: Live chat interface with streaming responses
-- 📱 **Responsive Design**: Works seamlessly on desktop and mobile devices
+- 🏠 **Intuitive Home Interface**: Clean, welcoming home page with easy navigation to all features
+- 📚 **Knowledge Management System**: Centralized dashboard to manage your PDF document library
+- 📄 **Smart PDF Upload & Processing**: Drag-and-drop interface with intelligent text extraction and chunking
+- 💬 **Conversational Chat Interface**: Natural language conversations with your document collection
+- 🔍 **Semantic Vector Search**: Advanced search through document content using Qdrant vector database
+- � **Document Source Attribution**: Clear citations showing exactly which document sections informed each response
+- 🤖 **AI-Powered Responses**: Accurate answers using Claude 3 Haiku with document context
+- 💾 **Persistent Chat History**: PostgreSQL database for storing chat sessions and conversation history
+- 🎨 **Modern, Responsive UI**: Clean interface built with Tailwind CSS and Radix UI components
+- 🔄 **Real-time Processing**: Live document processing and streaming chat responses
 
 ## 🛠️ Technology Stack
 
@@ -209,28 +211,38 @@ curl http://localhost:6333/
 
 ## 📖 How to Use
 
-### 1. Upload PDF Documents
-1. Navigate to the **"Upload PDFs"** tab
+### 1. Start from the Home Page
+Begin your journey on the clean, intuitive home page that provides an overview of the application's capabilities and easy navigation to key features.
+
+### 2. Manage Your Knowledge Base
+Use the **Knowledge Management** interface to:
+- View all uploaded documents
+- Organize your PDF collection
+- Monitor document processing status
+- Remove documents when no longer needed
+
+### 3. Upload PDF Documents
+1. Navigate to the **PDF Upload** interface
 2. Drag and drop PDF files or click to select files
 3. Wait for the processing to complete (documents are chunked and embedded)
-4. You'll see a success message when processing is done
+4. Your documents will be added to your knowledge base automatically
 
-### 2. Start Chatting
-1. Switch to the **"Chat Interface"** tab
-2. Click **"New Chat"** to start a fresh conversation
-3. Type your question about the uploaded documents
-4. The AI will respond with relevant information and show source documents
+### 4. Start Intelligent Conversations
+1. Access the **Chat Interface** to begin conversations
+2. Ask questions about your uploaded documents in natural language
+3. Receive AI-powered responses with contextual understanding
+4. View **document sources** that show exactly which parts of your PDFs were referenced
 
-### 3. Manage Chat History
-- **Create new chats**: Click "New Chat" to start fresh conversations
-- **Edit chat titles**: Click on any chat title to rename it
-- **Delete chats**: Remove conversations you no longer need
-- **View history**: Access all your previous conversations
+### 5. Leverage Document Sources
+- **Source Citations**: See which specific document sections informed each response
+- **Reference Verification**: Click on sources to understand the context
+- **Multi-Document Insights**: Get answers that synthesize information across multiple PDFs
+- **Accurate Attribution**: Trust responses with clear source references
 
-### 4. Understanding Responses
-- **AI Responses**: Get detailed answers based on your documents
-- **Source References**: See which parts of your documents were used
-- **Contextual Follow-ups**: Ask follow-up questions in the same chat
+### 6. Maintain Conversation Flow
+- **Contextual Follow-ups**: Ask related questions in the same conversation
+- **Chat History**: Access previous conversations and continue where you left off
+- **Session Management**: Create new chats for different topics or document sets
 
 ## 🔧 Database Management
 
@@ -322,23 +334,32 @@ rag-pdf-chatbot/
 
 ## 🔍 How It Works
 
-### 1. Document Processing Pipeline
+### 1. User Journey Flow
 ```
-PDF Upload → Text Extraction → Text Chunking → Vector Embedding → Qdrant Storage
-```
-
-### 2. Chat Flow
-```
-User Question → Vector Search → Context Retrieval → AI Processing → Response + Sources
+Home Page → Knowledge Management → PDF Upload → Document Processing → Chat Interface → AI Response with Sources
 ```
 
-### 3. Data Flow
-- **PDFs** are processed using `pdf-parse` to extract text
-- **Text chunks** are created using LangChain's text splitters
-- **Embeddings** are generated using the configured embedding model
-- **Vector search** retrieves relevant chunks from Qdrant
-- **AI responses** are generated using Claude 3 Haiku with retrieved context
-- **Chat history** is stored in PostgreSQL with Prisma ORM
+### 2. Document Processing Pipeline
+```
+PDF Upload Interface → Text Extraction → Text Chunking → Vector Embedding → Qdrant Storage → Knowledge Management Dashboard
+```
+
+### 3. Chat & Retrieval Flow
+```
+User Question → Vector Search → Context Retrieval → AI Processing → Response Generation → Source Attribution Display
+```
+
+### 4. Complete Data Flow
+- **Home Interface** provides intuitive navigation to all features
+- **Knowledge Management** displays and organizes your document library
+- **PDF Upload** processes documents using `pdf-parse` for text extraction
+- **Text Chunking** creates semantic segments using LangChain's text splitters
+- **Vector Embeddings** are generated and stored in Qdrant for semantic search
+- **Chat Interface** enables natural language conversations with your documents
+- **Vector Search** retrieves relevant document chunks based on user questions
+- **AI Processing** uses Claude 3 Haiku to generate contextual responses
+- **Source Attribution** shows exactly which document sections informed each response
+- **Chat History** is persisted in PostgreSQL with full conversation context
 
 ## 🚀 Deployment
 
