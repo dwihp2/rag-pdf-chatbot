@@ -37,7 +37,7 @@ Perfect for researchers, students, professionals, and anyone who needs to quickl
 - 📚 **Knowledge Management System**: Centralized dashboard to manage your PDF document library
 - 📄 **Smart PDF Upload & Processing**: Drag-and-drop interface with intelligent text extraction and chunking
 - 💬 **Conversational Chat Interface**: Natural language conversations with your document collection
-- 🔍 **Semantic Vector Search**: Advanced search through document content using Qdrant vector database
+- 🔍 **Semantic Vector Search**: Advanced search through document content using pgvector in PostgreSQL
 - � **Document Source Attribution**: Clear citations showing exactly which document sections informed each response
 - 🤖 **AI-Powered Responses**: Accurate answers using Claude 3 Haiku with document context
 - 💾 **Persistent Chat History**: PostgreSQL database for storing chat sessions and conversation history
@@ -49,9 +49,10 @@ Perfect for researchers, students, professionals, and anyone who needs to quickl
 - **Frontend**: Next.js 15, React 19, TypeScript
 - **AI/ML**: 
   - Claude 3 Haiku (Anthropic) for chat responses
+  - OpenAI text-embedding-3-small for document embeddings via Vercel AI SDK
   - LangChain for document processing and chunking
 - **Database**: PostgreSQL with Prisma ORM
-- **Vector Database**: Qdrant for semantic search and document retrieval
+- **Vector Database**: pgvector extension for PostgreSQL for semantic search and document retrieval
 - **UI**: Tailwind CSS, Radix UI components, Lucide icons
 - **File Processing**: PDF parsing with pdf-parse library
 - **Deployment**: Vercel-ready with optimized build configuration
@@ -64,8 +65,7 @@ Before you begin, ensure you have the following installed:
 
 - **Node.js 18+** (Latest LTS recommended)
 - **npm** or **yarn** package manager
-- **Docker** (for running Qdrant locally)
-- **PostgreSQL** database (local or cloud)
+- **PostgreSQL** database with pgvector extension (local or cloud)
 
 ### Quick Start Guide
 
@@ -92,10 +92,7 @@ DIRECT_URL="postgresql://username:password@localhost:5432/ragchatbot"
 
 # AI Service API Keys
 ANTHROPIC_API_KEY=your_anthropic_api_key_here
-
-# Qdrant Configuration
-NEXT_PUBLIC_QDRANT_URL=http://localhost:6333
-NEXT_PUBLIC_QDRANT_API_KEY=your_qdrant_api_key_if_needed
+OPENAI_API_KEY=your_openai_api_key_for_embeddings
 
 # Neon Database Configuration (if using Neon)
 NEON_DATABASE_URL=your_neon_database_url
@@ -120,16 +117,7 @@ npx prisma db push
 npx prisma studio
 ```
 
-#### 5. Start Qdrant Vector Database
-```bash
-# Using Docker
-docker run -p 6333:6333 qdrant/qdrant
-
-# Or using Docker Compose (if you have docker-compose.yml)
-docker-compose up qdrant
-```
-
-#### 6. Run the Development Server
+#### 5. Run the Development Server
 ```bash
 npm run dev
 # or
@@ -146,6 +134,11 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to see the a
    - Visit [Anthropic Console](https://console.anthropic.com/)
    - Create an account and generate an API key
    - Add credits to your account
+
+2. **OpenAI API Key** (for embeddings):
+   - Visit [OpenAI Platform](https://platform.openai.com/)
+   - Create an account and generate an API key
+   - Add credits to your account for embedding usage
 
 ### Database Configuration
 
@@ -169,13 +162,14 @@ DATABASE_URL="postgresql://your_username@localhost:5432/ragchatbot"
 - **PlanetScale**: MySQL-compatible option
 - **Railway**: Simple PostgreSQL hosting
 
-#### Option 3: Neon Database Setup
-If you're using Neon (recommended for serverless applications):
+#### Option 3: Neon Database Setup (Recommended for Serverless)
+Neon includes built-in support for the pgvector extension, making it perfect for this application.
 
 1. **Create a Neon account**: Visit [Neon Console](https://console.neon.tech/)
 2. **Create a new project** and database
-3. **Get your connection strings** from the Neon dashboard
-4. **Configure environment variables**:
+3. **Enable pgvector extension**: This is available by default in Neon
+4. **Get your connection strings** from the Neon dashboard
+5. **Configure environment variables**:
    ```bash
    # Primary database URLs (used by Prisma)
    DATABASE_URL="your_neon_pooled_connection_string"
@@ -185,29 +179,7 @@ If you're using Neon (recommended for serverless applications):
    NEON_DATABASE_URL="your_neon_pooled_connection_string"
    NEON_DIRECT_URL="your_neon_direct_connection_string"
    NEON_DATABASE_URL_UNPOOLED="your_neon_unpooled_connection_string"
-   
-   # If using Neon's Stack Auth
-   NEXT_PUBLIC_NEON_STACK_PROJECT_ID="your_project_id"
-   NEXT_PUBLIC_NEON_STACK_PUBLISHABLE_CLIENT_KEY="your_publishable_key"
-   NEON_STACK_SECRET_SERVER_KEY="your_secret_key"
    ```
-
-### Vector Database Setup
-
-#### Option 1: Local Qdrant (Development)
-```bash
-# Pull and run Qdrant
-docker pull qdrant/qdrant
-docker run -p 6333:6333 qdrant/qdrant
-
-# Verify it's running
-curl http://localhost:6333/
-```
-
-#### Option 2: Qdrant Cloud (Production)
-- Visit [Qdrant Cloud](https://cloud.qdrant.io/)
-- Create a free cluster
-- Get your API key and cluster URL
 
 ## 📖 How to Use
 
@@ -294,7 +266,9 @@ npm run db:reset     # Reset database
 - `POST /api/chat` - Send message and receive AI response
 
 ### Vector Database Endpoints
-- `POST /api/qdrant` - Perform Qdrant vector operations
+- `GET /api/vectors` - Get vector database statistics  
+- `POST /api/vectors` - Search vectors by query
+- `DELETE /api/vectors` - Delete vectors (clear all or by document ID)
 
 ## 📁 Project Structure
 
@@ -341,7 +315,7 @@ Home Page → Knowledge Management → PDF Upload → Document Processing → Ch
 
 ### 2. Document Processing Pipeline
 ```
-PDF Upload Interface → Text Extraction → Text Chunking → Vector Embedding → Qdrant Storage → Knowledge Management Dashboard
+PDF Upload Interface → Text Extraction → Text Chunking → Vector Embedding → pgvector Storage → Knowledge Management Dashboard
 ```
 
 ### 3. Chat & Retrieval Flow
@@ -354,9 +328,9 @@ User Question → Vector Search → Context Retrieval → AI Processing → Resp
 - **Knowledge Management** displays and organizes your document library
 - **PDF Upload** processes documents using `pdf-parse` for text extraction
 - **Text Chunking** creates semantic segments using LangChain's text splitters
-- **Vector Embeddings** are generated and stored in Qdrant for semantic search
+- **Vector Embeddings** are generated using OpenAI's text-embedding-3-small model via Vercel AI SDK and stored in PostgreSQL with pgvector
 - **Chat Interface** enables natural language conversations with your documents
-- **Vector Search** retrieves relevant document chunks based on user questions
+- **Vector Search** retrieves relevant document chunks using pgvector's cosine similarity search
 - **AI Processing** uses Claude 3 Haiku to generate contextual responses
 - **Source Attribution** shows exactly which document sections informed each response
 - **Chat History** is persisted in PostgreSQL with full conversation context
@@ -377,17 +351,12 @@ User Question → Vector Search → Context Retrieval → AI Processing → Resp
    vercel --prod
    ```
 
-4. **Configure environment variables** in Vercel dashboard:
-   - `DATABASE_URL`
-   - `DIRECT_URL`
+4. **Environment Variables**:
+   - `DATABASE_URL` and `DIRECT_URL`
    - `ANTHROPIC_API_KEY`
-   - `NEXT_PUBLIC_QDRANT_URL`
-   - `NEXT_PUBLIC_QDRANT_API_KEY`
+   - `OPENAI_API_KEY`
    - `NEON_DATABASE_URL` (if using Neon)
    - `NEON_DIRECT_URL` (if using Neon)
-   - `NEXT_PUBLIC_NEON_STACK_PROJECT_ID` (if using Stack Auth)
-   - `NEXT_PUBLIC_NEON_STACK_PUBLISHABLE_CLIENT_KEY` (if using Stack Auth)
-   - `NEON_STACK_SECRET_SERVER_KEY` (if using Stack Auth)
    - Additional Neon variables as needed
 
 5. **Run database migrations**:
@@ -434,10 +403,11 @@ Extend `src/lib/document-processor.ts` to support:
    # For PostgreSQL: postgresql://username:password@host:port/database
    ```
 
-2. **Qdrant Connection Failed**
+2. **pgvector Extension Error**
    ```bash
-   # Verify Qdrant is running
-   curl http://localhost:6333/
+   # Ensure pgvector extension is enabled in your PostgreSQL database
+   # For Neon, this is available by default
+   # For local PostgreSQL: CREATE EXTENSION vector;
    ```
 
 3. **API Key Issues**
@@ -525,9 +495,11 @@ copies or substantial portions of the Software.
 ## 🙏 Acknowledgments
 
 - **[Anthropic](https://www.anthropic.com/)** for Claude AI
-- **[Qdrant](https://qdrant.tech/)** for vector database
-- **[Vercel](https://vercel.com/)** for deployment platform
+- **[OpenAI](https://openai.com/)** for text embedding models
+- **[Vercel](https://vercel.com/)** for AI SDK and deployment platform
 - **[Prisma](https://prisma.io/)** for database ORM
+- **[pgvector](https://github.com/pgvector/pgvector)** for PostgreSQL vector extension
+- **[Neon](https://neon.tech/)** for serverless PostgreSQL with pgvector support
 - **[LangChain](https://langchain.com/)** for document processing
 - **[Radix UI](https://www.radix-ui.com/)** for UI components
 

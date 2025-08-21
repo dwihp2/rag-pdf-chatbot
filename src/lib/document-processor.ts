@@ -1,7 +1,7 @@
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { v4 as uuidv4 } from "uuid";
-import { embeddings, DocumentChunk } from "./qdrant";
+import { vectorService, DocumentChunk } from "./vector-service";
 import fs from "fs";
 import path from "path";
 import os from "os";
@@ -119,31 +119,26 @@ export class DocumentProcessor {
 
           if (chunkText.trim().length > 10) { // Only process meaningful chunks
             try {
-              console.log(`⚡ Generating embedding for chunk ${chunkIndex + 1}/${textChunks.length} on page ${pageNumber}`);
+              console.log(`⚡ Processing chunk ${chunkIndex + 1}/${textChunks.length} on page ${pageNumber}`);
 
-              const embeddingResult = await embeddings.embedDocuments([chunkText]);
+              const chunk: DocumentChunk = {
+                id: uuidv4(),
+                text: chunkText.trim(),
+                source: {
+                  filename,
+                  page: pageNumber,
+                },
+              };
 
-              if (embeddingResult.length > 0 && embeddingResult[0].length > 0) {
-                const chunk: DocumentChunk = {
-                  id: uuidv4(),
-                  text: chunkText.trim(),
-                  source: {
-                    filename,
-                    page: pageNumber,
-                  },
-                  vector: embeddingResult[0],
-                };
+              chunks.push(chunk);
+              totalChunks++;
 
-                chunks.push(chunk);
-                totalChunks++;
-
-                // Log progress every 3 chunks to reduce noise
-                if (totalChunks % 3 === 0) {
-                  console.log(`📊 Progress: ${totalChunks} chunks processed so far`);
-                }
+              // Log progress every 3 chunks to reduce noise
+              if (totalChunks % 3 === 0) {
+                console.log(`📊 Progress: ${totalChunks} chunks processed so far`);
               }
-            } catch (embeddingError) {
-              console.warn(`⚠️ Failed to generate embedding for chunk on page ${pageNumber}:`, embeddingError);
+            } catch (processingError) {
+              console.warn(`⚠️ Failed to process chunk on page ${pageNumber}:`, processingError);
               // Continue processing other chunks
             }
           }
@@ -202,8 +197,7 @@ export class DocumentProcessor {
    * Generate embedding for a query string
    */
   async generateQueryEmbedding(query: string): Promise<number[]> {
-    const embedResult = await embeddings.embedQuery(query);
-    return embedResult;
+    return await vectorService.generateQueryEmbedding(query);
   }
 
   /**

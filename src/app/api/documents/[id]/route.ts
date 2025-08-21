@@ -8,15 +8,12 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    // Delete the document from the database
+    // Delete document from database
     await prisma.document.delete({
-      where: {
-        id,
-      },
+      where: { id },
     });
 
-    // TODO: Also delete from Qdrant vector database
-    // This would require calling the Qdrant API to delete the vectors
+    // Note: Document chunks are automatically deleted due to cascade relationship
     // associated with this document
 
     return NextResponse.json({ success: true });

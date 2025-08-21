@@ -12,9 +12,10 @@ generator client {
 // default: DATABASE_URL and DIRECT_URL
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [vector]
 }
 
 model Chat {
@@ -55,9 +56,26 @@ model Document {
   uploadedAt   DateTime @default(now()) @map("uploaded_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
   status       String   @default("processing") // processing, completed, failed
-  vectorId     String?  @map("vector_id") // Reference to Qdrant vector ID
   summary      String?
   chunkCount   Int      @default(0) @map("chunk_count")
 
+  // Relations
+  chunks DocumentChunk[]
+
   @@map("documents")
+}
+
+model DocumentChunk {
+  id         String                      @id @default(cuid())
+  documentId String                      @map("document_id")
+  text       String
+  pageNumber Int                         @map("page_number")
+  chunkIndex Int                         @map("chunk_index")
+  embedding  Unsupported("vector(1536)") // OpenAI text-embedding-3-small has 1536 dimensions
+  createdAt  DateTime                    @default(now()) @map("created_at")
+
+  // Relations
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@map("document_chunks")
 }

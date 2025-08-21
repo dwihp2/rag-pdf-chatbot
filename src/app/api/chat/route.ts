@@ -1,6 +1,6 @@
 import { openai } from '@ai-sdk/openai';
 import { streamText } from "ai";
-import { qdrantService } from "@/lib/qdrant";
+import { vectorService } from "@/lib/vector-service";
 import { documentProcessor } from "@/lib/document-processor";
 import { databaseService } from "@/lib/database";
 
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     const queryEmbedding = await documentProcessor.generateQueryEmbedding(latestMessage);
 
     // Search for relevant documents with lower threshold for better recall
-    const searchResults = await qdrantService.searchSimilar(queryEmbedding, 5, 0.2);
+    const searchResults = await vectorService.searchSimilar(queryEmbedding, 5, 0.2);
 
     // Format the retrieved documents for context
     let context = "";

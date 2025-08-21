@@ -22,7 +22,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { filename, originalName, fileSize, mimeType, vectorId, summary, chunkCount } = body;
+    const { filename, originalName, fileSize, mimeType, summary, chunkCount } = body;
 
     const document = await prisma.document.create({
       data: {
@@ -30,7 +30,6 @@ export async function POST(request: NextRequest) {
         originalName,
         fileSize,
         mimeType,
-        vectorId,
         summary,
         chunkCount,
         status: 'completed',

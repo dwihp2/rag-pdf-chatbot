@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { qdrantService } from "@/lib/qdrant";
+import { vectorService } from "@/lib/vector-service";
 import { documentProcessor } from "@/lib/document-processor";
 import { prisma } from "@/lib/database";
 
@@ -30,26 +30,22 @@ export async function POST(request: NextRequest) {
     // Process all PDF files
     const processedDocuments = await documentProcessor.processMultiplePDFs(files);
 
-    // Collect all chunks
-    const allChunks = processedDocuments.flatMap(doc => doc.chunks);
-
-    if (allChunks.length === 0) {
+    if (processedDocuments.length === 0) {
       return NextResponse.json(
         { error: "No content could be extracted from the uploaded files" },
         { status: 400 }
       );
     }
 
-    console.log(`🔄 Uploading ${allChunks.length} chunks to Qdrant...`);
+    console.log(`�️ Storing documents and generating embeddings...`);
 
-    // Upload to Qdrant
-    await qdrantService.addDocuments(allChunks);
-
-    // Store document metadata in database
+    // Store document metadata and chunks in database
     const documentMetadata = await Promise.all(
       processedDocuments.map(async (doc) => {
         const file = files.find(f => f.name === doc.filename);
-        return prisma.document.create({
+
+        // Create document record
+        const documentRecord = await prisma.document.create({
           data: {
             filename: doc.filename,
             originalName: file?.name || doc.filename,
@@ -57,14 +53,27 @@ export async function POST(request: NextRequest) {
             mimeType: file?.type || 'application/pdf',
             chunkCount: doc.totalChunks,
             summary: `Document with ${doc.totalPages} pages and ${doc.totalChunks} chunks`,
-            status: 'completed',
+            status: 'processing',
           },
         });
+
+        // Add chunks to vector database with embeddings
+        if (doc.chunks.length > 0) {
+          await vectorService.addDocuments(documentRecord.id, doc.chunks);
+
+          // Update document status to completed
+          await prisma.document.update({
+            where: { id: documentRecord.id },
+            data: { status: 'completed' },
+          });
+        }
+
+        return documentRecord;
       })
     );
 
     // Get collection stats
-    const stats = await qdrantService.getStats();
+    const stats = await vectorService.getStats();
 
     console.log("✅ Upload completed successfully!");
 
@@ -73,7 +82,7 @@ export async function POST(request: NextRequest) {
       message: `Successfully processed ${files.length} PDFs`,
       details: {
         filesProcessed: files.length,
-        totalChunks: allChunks.length,
+        totalChunks: documentMetadata.reduce((total, doc) => total + doc.chunkCount, 0),
         documents: processedDocuments.map(doc => ({
           filename: doc.filename,
           pages: doc.totalPages,
