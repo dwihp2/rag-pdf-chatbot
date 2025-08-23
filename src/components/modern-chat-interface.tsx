@@ -4,12 +4,14 @@ import { useState, useEffect, useRef } from 'react';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-// Kibo UI AI Components
-import { AIConversation, AIConversationContent, AIConversationScrollButton } from '@/components/ui/kibo-ui/ai/conversation';
-import { AIMessage, AIMessageContent, AIMessageAvatar } from '@/components/ui/kibo-ui/ai/message';
-import { AIResponse } from '@/components/ui/kibo-ui/ai/response';
-import { AISources, AISourcesTrigger, AISourcesContent, AISource } from '@/components/ui/kibo-ui/ai/source';
-import { AIInput, AIInputTextarea, AIInputToolbar, AIInputSubmit } from '@/components/ui/kibo-ui/ai/input';
+// Vercel AI Elements Components
+import { Conversation, ConversationContent, ConversationScrollButton } from '@/components/ui/ai-elements/conversation';
+import { Message, MessageContent, MessageAvatar } from '@/components/ui/ai-elements/message';
+import { PromptInput, PromptInputTextarea, PromptInputToolbar, PromptInputSubmit } from '@/components/ui/ai-elements/prompt-input';
+
+// Enhanced Components with Inline Citations and Carousel Sources
+import { EnhancedResponse } from '@/components/enhanced-response';
+import { SourceDisplayController } from '@/components/source-display-controller';
 
 interface Source {
   filename: string;
@@ -146,8 +148,8 @@ export default function ModernChatInterface({ chatId, initialMessages = [] }: Mo
 
   return (
     <div className="flex flex-col h-full max-h-screen bg-gray-50 dark:bg-gray-900">
-      <AIConversation className="flex-1">
-        <AIConversationContent>
+      <Conversation className="flex-1">
+        <ConversationContent>
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 rounded-full mb-4">
@@ -163,76 +165,72 @@ export default function ModernChatInterface({ chatId, initialMessages = [] }: Mo
           ) : (
             <div className="space-y-6">
               {messages.map((message) => (
-                <AIMessage key={message.id} from={message.role}>
-                  <AIMessageAvatar
+                <Message key={message.id} from={message.role}>
+                  <MessageAvatar
                     src=""
                     name={message.role === 'user' ? 'U' : 'AI'}
                   />
-                  <AIMessageContent>
+                  <MessageContent>
                     {message.role === 'assistant' ? (
                       <div>
-                        <AIResponse>{message.content}</AIResponse>
+                        <EnhancedResponse sources={message.sources}>
+                          {message.content}
+                        </EnhancedResponse>
                         {message.sources && message.sources.length > 0 && (
-                          <AISources>
-                            <AISourcesTrigger count={message.sources.length} />
-                            <AISourcesContent>
-                              {message.sources.map((source, index) => (
-                                <AISource
-                                  key={index}
-                                  title={`${source.filename} (p.${source.page})`}
-                                  href={`#${source.filename}-${source.page}`}
-                                />
-                              ))}
-                            </AISourcesContent>
-                          </AISources>
+                          <div className="mt-4">
+                            <SourceDisplayController
+                              sources={message.sources}
+                              show={false}
+                            />
+                          </div>
                         )}
                       </div>
                     ) : (
                       <div className="whitespace-pre-wrap">{message.content}</div>
                     )}
-                  </AIMessageContent>
-                </AIMessage>
+                  </MessageContent>
+                </Message>
               ))}
 
               {/* Loading indicator */}
               {isLoading && (
-                <AIMessage from="assistant">
-                  <AIMessageAvatar
+                <Message from="assistant">
+                  <MessageAvatar
                     src=""
                     name="AI"
                   />
-                  <AIMessageContent>
+                  <MessageContent>
                     <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span className="text-sm">Thinking...</span>
                     </div>
-                  </AIMessageContent>
-                </AIMessage>
+                  </MessageContent>
+                </Message>
               )}
             </div>
           )}
-        </AIConversationContent>
-        <AIConversationScrollButton />
-      </AIConversation>
+        </ConversationContent>
+        <ConversationScrollButton />
+      </Conversation>
 
       {/* Input Area */}
       <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-        <AIInput onSubmit={handleSendMessage}>
-          <AIInputTextarea
+        <PromptInput onSubmit={handleSendMessage}>
+          <PromptInputTextarea
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask me anything about your documents..."
             disabled={isLoading}
           />
-          <AIInputToolbar>
+          <PromptInputToolbar>
             <div></div>
-            <AIInputSubmit
+            <PromptInputSubmit
               disabled={!input.trim() || isLoading}
               status={isLoading ? 'streaming' : 'ready'}
             />
-          </AIInputToolbar>
-        </AIInput>
+          </PromptInputToolbar>
+        </PromptInput>
       </div>
     </div>
   );

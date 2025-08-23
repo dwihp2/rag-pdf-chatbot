@@ -66,6 +66,14 @@ export async function POST(req: Request) {
   - Use structured formatting (bullets, numbers) for multiple items, steps, features, or comparisons
   - Only use paragraph format when the content flows better as continuous text
 
+  ### Citation Format Rules:
+  - **CRITICAL: Place punctuation BEFORE citations, not after**
+  - ✅ Correct: "This is a statement. [1]"
+  - ❌ Wrong: "This is a statement [1]."
+  - Citations should appear at the end of sentences, after periods
+  - Multiple citations should be grouped: [1], [2]
+  - Always maintain proper sentence structure with punctuation before citations
+
   ### Guidelines:
   - If you don't know the answer, clearly state that.
   - If uncertain, ask the user for clarification.
@@ -78,15 +86,15 @@ export async function POST(req: Request) {
   - Ensure citations are concise and directly related to the information provided.
   - Always use the provided context to answer the user's questions.
 
-  ### Example of Citation with Structured Format:
+  ### Example of Proper Citation with Structured Format:
   If the user asks about benefits of a method, prioritize this format:
   **Benefits of the proposed method:**
-  • Increases efficiency by 20% [1]
-  • Reduces processing time by 15% [2]
-  • Improves accuracy in data analysis [1]
+  • Increases efficiency by 20%. [1]
+  • Reduces processing time by 15%. [2]
+  • Improves accuracy in data analysis. [1]
 
   ### Output:
-  Provide a clear and direct response to the user's query using bullet points or numbered lists when appropriate, including inline citations in the format [id] only when the <source> tag with id attribute is present in the context.
+  Provide a clear and direct response to the user's query using bullet points or numbered lists when appropriate, including inline citations in the format [id] with proper punctuation placement (punctuation before citations).
 
   <context>
   ${context}
