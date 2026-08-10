@@ -41,14 +41,16 @@ export async function POST(req: Request) {
 
     // Get or create chat
     let activeChatId = chatId;
+    let activeCollectionId: string | null = null;
     if (activeChatId) {
       const owned = await prisma.chat.findFirst({
         where: { id: activeChatId, userId: session.user.id },
-        select: { id: true },
+        select: { id: true, collectionId: true },
       });
       if (!owned) {
         return new Response("Forbidden", { status: 403 });
       }
+      activeCollectionId = owned.collectionId;
     } else {
       const chat = await prisma.chat.create({
         data: {
@@ -68,8 +70,11 @@ export async function POST(req: Request) {
       },
     });
 
-    // Retrieve context
-    const { context, sources } = await retrieveContext(latestMessage);
+    // Retrieve context (scoped to collection if chat belongs to one)
+    const { context, sources } = await retrieveContext(
+      latestMessage,
+      activeCollectionId ?? undefined
+    );
 
     const systemMessage = `### Task:
 Respond to the user query using the provided context. You MUST include inline citations in the format [N] for EVERY factual claim you make that is supported by the context. N refers to the [Document N] marker in the context.

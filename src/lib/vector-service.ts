@@ -1,5 +1,6 @@
 import { openai } from "@ai-sdk/openai";
 import { embed, embedMany } from "ai";
+import { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 
 const EMBEDDING_MODEL = "text-embedding-3-small";
@@ -65,9 +66,19 @@ export const vectorService = {
   async searchSimilar(
     queryEmbedding: number[],
     limit: number = 8,
-    threshold: number = 0.6
+    threshold: number = 0.6,
+    collectionId?: string
   ) {
     const embeddingStr = `[${queryEmbedding.join(",")}]`;
+
+    const collectionFilter = collectionId
+      ? `AND EXISTS (
+        SELECT 1 FROM "CollectionDocument" cd
+        WHERE cd."documentId" = dc."documentId"
+          AND cd."collectionId" = ${Prisma.sql`$4::uuid`}
+      )`
+      : "";
+
     const results = await prisma.$queryRawUnsafe<
       Array<{
         id: string;
@@ -91,11 +102,13 @@ export const vectorService = {
        JOIN "Document" d ON d.id = dc."documentId"
        WHERE d.status = 'completed'
          AND 1 - (dc.embedding <=> $1::vector) > $2
+         ${collectionFilter}
        ORDER BY dc.embedding <=> $1::vector
        LIMIT $3`,
       embeddingStr,
       threshold,
-      limit
+      limit,
+      collectionId ?? null
     );
 
     // Deduplicate by document — keep highest-scoring chunk per document

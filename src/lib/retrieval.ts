@@ -1,12 +1,20 @@
 import { vectorService } from "./vector-service";
 import type { AppSource } from "@/types";
 
-export async function retrieveContext(query: string): Promise<{
+export async function retrieveContext(
+  query: string,
+  collectionId?: string
+): Promise<{
   context: string;
   sources: AppSource[];
 }> {
   const queryEmbedding = await vectorService.generateQueryEmbedding(query);
-  const results = await vectorService.searchSimilar(queryEmbedding, 8, 0.6);
+  const results = await vectorService.searchSimilar(
+    queryEmbedding,
+    8,
+    0.6,
+    collectionId
+  );
 
   if (results.length === 0) {
     return {
