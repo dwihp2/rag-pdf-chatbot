@@ -105,7 +105,7 @@ ${context}
             type: "data-notification",
             data: {
               message:
-                "No relevant documenchatnd. Answering from general knowledge.",
+                "No relevant documents found. Answering from general knowledge.",
               level: "warning",
             },
             transient: true,
@@ -113,7 +113,7 @@ ${context}
         }
 
         const result = streamText({
-          model: deepseek("deepseek-v4-pro"),
+          model: deepseek("deepseek-chat"),
           system: systemMessage,
           messages: await convertToModelMessages(messages),
           temperature: 0.5,
