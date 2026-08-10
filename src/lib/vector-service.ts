@@ -1,9 +1,9 @@
-import { openai } from "@ai-sdk/openai";
+import { google } from "@ai-sdk/google";
 import { embed, embedMany } from "ai";
 import { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 
-const EMBEDDING_MODEL = "text-embedding-3-small";
+const EMBEDDING_MODEL = "text-embedding-004";
 const BATCH_SIZE = 10;
 
 export const vectorService = {
@@ -12,7 +12,7 @@ export const vectorService = {
     for (let i = 0; i < texts.length; i += BATCH_SIZE) {
       const batch = texts.slice(i, i + BATCH_SIZE);
       const { embeddings: batchEmbeddings } = await embedMany({
-        model: openai.embedding(EMBEDDING_MODEL),
+        model: google.textEmbeddingModel(EMBEDDING_MODEL),
         values: batch,
       });
       embeddings.push(...batchEmbeddings);
@@ -22,7 +22,7 @@ export const vectorService = {
 
   async generateQueryEmbedding(query: string): Promise<number[]> {
     const { embedding } = await embed({
-      model: openai.embedding(EMBEDDING_MODEL),
+      model: google.textEmbeddingModel(EMBEDDING_MODEL),
       value: query,
     });
     return embedding;
