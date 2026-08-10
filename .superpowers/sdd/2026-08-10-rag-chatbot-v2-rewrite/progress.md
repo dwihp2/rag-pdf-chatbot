@@ -25,4 +25,18 @@
 
 Task 1.1: complete (commits 7465163..5b13ddb, review clean after 1 fix round)
 Task 1.1: fix round 1/5 (2 addressed, 0 open — carousel/ai-elements/kibo-ui deletion, package reporting; commits 7465163..5b13ddb)
+Task 1.2: complete (commits bd8d2f8, review clean)
+Task 1.2: minor (deferred): .npmrc legacy-peer-deps — remove when upgrading ai to v5
+Task 1.3: complete (commits d3d3e45, review clean)
+Task 1.3: minor (deferred): ai 4→7 bump adds Node ≥22 floor — verify deploy target supports it
+Task 2.1: complete (commits d36dc9d, review clean)
+Task 2.1: minor (deferred): stale v1 migration directory — squash at Milestone 2 end
+Task 2.2: complete (commits fabbb4e, review clean)
+Task 2.2: minor (deferred): BETTER_AUTH_SECRET is placeholder — rotate before deploy; test user test@test.com in dev DB
+Task 2.3: complete (commits 52efc23, review clean)
+Task 2.4: complete (commits 46e9192, review clean)
+
+## Milestone 2 Complete: Database & Auth
+
+Task 3.1: complete (commits 506db1b..576ce11, review clean)
 

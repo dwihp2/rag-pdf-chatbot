@@ -1,0 +1,220 @@
+diff --git a/prisma/migrations/20260810_add_ivfflat_index/migration.sql b/prisma/migrations/20260810_add_ivfflat_index/migration.sql
+new file mode 100644
+index 0000000..d1eec6f
+--- /dev/null
++++ b/prisma/migrations/20260810_add_ivfflat_index/migration.sql
+@@ -0,0 +1,2 @@
++-- ivfflat index for vector similarity search on document chunks
++CREATE INDEX IF NOT EXISTS "DocumentChunk_embedding_idx" ON "DocumentChunk" USING ivfflat ("embedding" vector_cosine_ops);
+diff --git a/prisma/schema.prisma b/prisma/schema.prisma
+index 405f07e..dfcd270 100644
+--- a/prisma/schema.prisma
++++ b/prisma/schema.prisma
+@@ -1,16 +1,8 @@
+-// This is your Prisma schema file,
+-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+-
+-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+-
+ generator client {
+   provider        = "prisma-client-js"
+   previewFeatures = ["postgresqlExtensions"]
+ }
+ 
+-// default: DATABASE_URL and DIRECT_URL
+-
+ datasource db {
+   provider   = "postgresql"
+   url        = env("DATABASE_URL")
+@@ -18,64 +10,151 @@ datasource db {
+   extensions = [vector]
+ }
+ 
+-model Chat {
+-  id        String   @id @default(cuid())
+-  title     String
+-  createdAt DateTime @default(now()) @map("created_at")
+-  updatedAt DateTime @updatedAt @map("updated_at")
++// === Better Auth Tables ===
++
++model User {
++  id            String   @id @default(uuid())
++  name          String
++  email         String   @unique
++  emailVerified Boolean  @default(false)
++  image         String?
++  createdAt     DateTime @default(now())
++  updatedAt     DateTime @updatedAt
++
++  sessions    Session[]
++  accounts    Account[]
++
++  // App relations
++  chats       Chat[]
++  documents   Document[]
++  collections Collection[]
++  memberships CollectionMember[]
++}
+ 
+-  messages Message[]
++model Session {
++  id        String   @id @default(uuid())
++  userId    String
++  token     String   @unique
++  expiresAt DateTime
++  ipAddress String?
++  userAgent String?
++  createdAt DateTime @default(now())
++  updatedAt DateTime @updatedAt
++
++  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
++}
+ 
+-  @@map("chats")
++model Account {
++  id                    String    @id @default(uuid())
++  userId                String
++  accountId             String
++  providerId            String
++  accessToken           String?
++  refreshToken          String?
++  accessTokenExpiresAt  DateTime?
++  refreshTokenExpiresAt DateTime?
++  scope                 String?
++  idToken               String?
++  password              String?
++  createdAt             DateTime  @default(now())
++  updatedAt             DateTime  @updatedAt
++
++  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ }
+ 
+-model Message {
+-  id        String   @id @default(cuid())
+-  chatId    String   @map("chat_id")
+-  role      Role
+-  content   String
+-  sources   Json? // JSON field for storing source documents
+-  createdAt DateTime @default(now()) @map("created_at")
++// === App Tables ===
+ 
+-  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
++model Collection {
++  id          String   @id @default(uuid())
++  name        String
++  description String?
++  ownerId     String
++  createdAt   DateTime @default(now())
++  updatedAt   DateTime @updatedAt
+ 
+-  @@map("messages")
++  owner     User                 @relation(fields: [ownerId], references: [id], onDelete: Cascade)
++  members   CollectionMember[]
++  documents CollectionDocument[]
++  chats     Chat[]
+ }
+ 
+-enum Role {
+-  user
+-  assistant
++model CollectionMember {
++  id           String   @id @default(uuid())
++  collectionId String
++  userId       String
++  role         String   @default("member") // "owner" | "member"
++  joinedAt     DateTime @default(now())
++
++  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
++  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
++
++  @@unique([collectionId, userId])
++}
++
++model CollectionDocument {
++  id           String   @id @default(uuid())
++  collectionId String
++  documentId   String
++  addedAt      DateTime @default(now())
++
++  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
++  document   Document   @relation(fields: [documentId], references: [id], onDelete: Cascade)
++
++  @@unique([collectionId, documentId])
++}
++
++model Chat {
++  id           String   @id @default(uuid())
++  title        String   @default("New Chat")
++  userId       String
++  collectionId String?
++  createdAt    DateTime @default(now())
++  updatedAt    DateTime @updatedAt
++
++  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
++  collection Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
++  messages   Message[]
++}
++
++model Message {
++  id        String   @id @default(uuid())
++  chatId    String
++  role      String // "user" | "assistant"
++  content   String
++  sources   Json? // AppSource[]
++  createdAt DateTime @default(now())
++
++  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+ }
+ 
+ model Document {
+-  id           String   @id @default(cuid())
++  id           String   @id @default(uuid())
++  userId       String
+   filename     String
+-  originalName String   @map("original_name")
+-  fileSize     Int      @map("file_size")
+-  mimeType     String   @map("mime_type")
+-  uploadedAt   DateTime @default(now()) @map("uploaded_at")
+-  updatedAt    DateTime @updatedAt @map("updated_at")
+-  status       String   @default("processing") // processing, completed, failed
++  originalName String
++  fileSize     Int
++  mimeType     String
++  status       String   @default("processing") // "processing" | "completed" | "failed"
+   summary      String?
+-  chunkCount   Int      @default(0) @map("chunk_count")
+-
+-  // Relations
+-  chunks DocumentChunk[]
++  chunkCount   Int      @default(0)
++  uploadedAt   DateTime @default(now())
+ 
+-  @@map("documents")
++  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
++  chunks      DocumentChunk[]
++  collections CollectionDocument[]
+ }
+ 
+ model DocumentChunk {
+-  id         String                      @id @default(cuid())
+-  documentId String                      @map("document_id")
++  id         String                      @id @default(uuid())
++  documentId String
+   text       String
+-  pageNumber Int                         @map("page_number")
+-  chunkIndex Int                         @map("chunk_index")
+-  embedding  Unsupported("vector(1536)") // OpenAI text-embedding-3-small has 1536 dimensions
+-  createdAt  DateTime                    @default(now()) @map("created_at")
++  pageNumber Int
++  chunkIndex Int
++  embedding  Unsupported("vector(1536)")
++  createdAt  DateTime                    @default(now())
+ 
+-  // Relations
+   document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+ 
+-  @@map("document_chunks")
++  // ponytail: ivfflat index on `embedding` not expressible in Prisma schema for Unsupported("vector(1536)");
++  // created via raw SQL in prisma/migrations — see migration after db push
+ }

@@ -1,0 +1,125 @@
+diff --git a/src/app/(dashboard)/layout.tsx b/src/app/(dashboard)/layout.tsx
+new file mode 100644
+index 0000000..b463b16
+--- /dev/null
++++ b/src/app/(dashboard)/layout.tsx
+@@ -0,0 +1,17 @@
++import { AuthGuard } from "@/components/auth/auth-guard";
++import { AppSidebar } from "@/components/layout/app-sidebar";
++
++export default function DashboardLayout({
++  children,
++}: {
++  children: React.ReactNode;
++}) {
++  return (
++    <AuthGuard>
++      <div className="flex h-screen">
++        <AppSidebar />
++        <main className="flex-1 overflow-hidden">{children}</main>
++      </div>
++    </AuthGuard>
++  );
++}
+diff --git a/src/components/layout/app-sidebar.tsx b/src/components/layout/app-sidebar.tsx
+new file mode 100644
+index 0000000..e42ec9e
+--- /dev/null
++++ b/src/components/layout/app-sidebar.tsx
+@@ -0,0 +1,64 @@
++"use client";
++
++import Link from "next/link";
++import { usePathname } from "next/navigation";
++import { MessageSquare, FileText, FolderOpen, Plus } from "lucide-react";
++import { Button } from "@/components/ui/button";
++import { signOut } from "@/lib/auth";
++import { cn } from "@/lib/utils";
++
++const navItems = [
++  { href: "/", label: "Chat", icon: MessageSquare },
++  { href: "/documents", label: "Documents", icon: FileText },
++  { href: "/collections", label: "Collections", icon: FolderOpen },
++];
++
++export function AppSidebar() {
++  const pathname = usePathname();
++
++  return (
++    <aside className="w-64 border-r h-screen flex flex-col p-4">
++      <div className="flex items-center gap-2 mb-8">
++        <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
++          <MessageSquare className="h-4 w-4 text-primary-foreground" />
++        </div>
++        <span className="font-semibold">RAG Chat</span>
++      </div>
++
++      <Link href="/" className="mb-4">
++        <Button className="w-full" variant="outline">
++          <Plus className="h-4 w-4 mr-2" />
++          New Chat
++        </Button>
++      </Link>
++
++      <nav className="space-y-1 flex-1">
++        {navItems.map((item) => (
++          <Link
++            key={item.href}
++            href={item.href}
++            className={cn(
++              "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
++              pathname === item.href
++                ? "bg-accent text-accent-foreground"
++                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
++            )}
++          >
++            <item.icon className="h-4 w-4" />
++            {item.label}
++          </Link>
++        ))}
++      </nav>
++
++      <div className="border-t pt-4">
++        <Button
++          variant="ghost"
++          className="w-full justify-start text-muted-foreground"
++          onClick={() => signOut()}
++        >
++          Sign Out
++        </Button>
++      </div>
++    </aside>
++  );
++}
+diff --git a/src/hooks/use-chat-store.ts b/src/hooks/use-chat-store.ts
+new file mode 100644
+index 0000000..e784be5
+--- /dev/null
++++ b/src/hooks/use-chat-store.ts
+@@ -0,0 +1 @@
++export { useChatStore } from "@/store/chat-store";
+diff --git a/src/store/chat-store.ts b/src/store/chat-store.ts
+new file mode 100644
+index 0000000..7fd23f6
+--- /dev/null
++++ b/src/store/chat-store.ts
+@@ -0,0 +1,19 @@
++import { create } from "zustand";
++
++interface ChatStore {
++  activeThreadId: string | null;
++  isFloatingOpen: boolean;
++  setActiveThreadId: (id: string | null) => void;
++  toggleFloating: () => void;
++  openFloating: () => void;
++  closeFloating: () => void;
++}
++
++export const useChatStore = create<ChatStore>((set) => ({
++  activeThreadId: null,
++  isFloatingOpen: false,
++  setActiveThreadId: (id) => set({ activeThreadId: id }),
++  toggleFloating: () => set((s) => ({ isFloatingOpen: !s.isFloatingOpen })),
++  openFloating: () => set({ isFloatingOpen: true }),
++  closeFloating: () => set({ isFloatingOpen: false }),
++}));

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { vectorService } from "@/lib/vector-service";
 import { documentProcessor } from "@/lib/document-processor";
-import { prisma } from "@/lib/database";
+import { prisma } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,8 +51,8 @@ export async function POST(request: NextRequest) {
             originalName: file?.name || doc.filename,
             fileSize: file?.size || 0,
             mimeType: file?.type || 'application/pdf',
-            chunkCount: doc.totalChunks,
-            summary: `Document with ${doc.totalPages} pages and ${doc.totalChunks} chunks`,
+            chunkCount: doc.chunks.length,
+            summary: `Document with ${doc.pageCount} pages and ${doc.chunks.length} chunks`,
             status: 'processing',
           },
         });
@@ -72,9 +72,6 @@ export async function POST(request: NextRequest) {
       })
     );
 
-    // Get collection stats
-    const stats = await vectorService.getStats();
-
     console.log("✅ Upload completed successfully!");
 
     return NextResponse.json({
@@ -85,11 +82,10 @@ export async function POST(request: NextRequest) {
         totalChunks: documentMetadata.reduce((total, doc) => total + doc.chunkCount, 0),
         documents: processedDocuments.map(doc => ({
           filename: doc.filename,
-          pages: doc.totalPages,
-          chunks: doc.totalChunks,
+          pages: doc.pageCount,
+          chunks: doc.chunks.length,
         })),
         documentMetadata: documentMetadata,
-        collectionStats: stats,
       }
     });
 

@@ -1,0 +1,284 @@
+diff --git a/.superpowers/sdd/2026-08-10-rag-chatbot-v2-rewrite/task-1.3-report.md b/.superpowers/sdd/2026-08-10-rag-chatbot-v2-rewrite/task-1.3-report.md
+new file mode 100644
+index 0000000..412e1bb
+--- /dev/null
++++ b/.superpowers/sdd/2026-08-10-rag-chatbot-v2-rewrite/task-1.3-report.md
+@@ -0,0 +1,32 @@
++# Task 1.3 Report: Configure TypeScript types
++
++**Status:** ✅ Complete
++
++## What was done
++
++- Created [src/types/index.ts](../../../src/types/index.ts) exactly as specified in the plan:
++  - `AppSource` — RAG source interface (id, documentId, filename, page, snippet, score)
++  - `MyUIMessage` — custom `UIMessage` with `sources` and `notification` data parts
++  - `CreateChatInput`, `CreateDocumentInput`, `CreateCollectionInput` — API input types
++
++## Deviation from plan (required fix)
++
++The plan's `MyUIMessage = UIMessage<never, {...}>` requires AI SDK v5+ (generic `UIMessage`).
++Task 1.2 left top-level `ai@4.3.16` installed, where `UIMessage` is **not generic** —
++the file failed to compile with `TS2315: Type 'UIMessage' is not generic`.
++
++Fix: `npm install ai@^7` → `ai@7.0.58`, which also dedupes with
++`@assistant-ui/react-ai-sdk@1.4.5`'s peer dependency (previously it carried its own nested copy).
++
++## Verification
++
++- `npm ls ai` → single `ai@7.0.58`, deduped across the tree.
++- `npx tsc --noEmit` → **zero errors in `src/types/index.ts`**.
++  Remaining errors are pre-existing, all in files the plan hasn't rewritten yet
++  (`@/lib/database` imports, deleted `chat-layout`/`chatgpt-home` imports, langchain imports)
++  — expected per Task 1.1 Step 8 ("errors only from files we haven't rewritten yet").
++
++## Notes for later tasks
++
++- Any task importing from `ai` now gets the v7 API (e.g. `toDataStreamResponse` → v5+ streaming
++  helpers, `UIMessage` generics). Backend tasks in Milestone 3+ should be written against AI SDK v5+ API.
+diff --git a/package-lock.json b/package-lock.json
+index 134775d..21412db 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -25,7 +25,7 @@
+         "@radix-ui/react-tooltip": "^1.2.7",
+         "@radix-ui/react-use-controllable-state": "^1.2.2",
+         "@shikijs/transformers": "^3.7.0",
+-        "ai": "^4.3.16",
++        "ai": "^7.0.58",
+         "better-auth": "^1.6.26",
+         "class-variance-authority": "^0.7.1",
+         "clsx": "^2.1.1",
+@@ -482,23 +482,6 @@
+         "react": "^18 || ~19.0.1 || ~19.1.2 || ^19.2.1"
+       }
+     },
+-    "node_modules/@assistant-ui/react-ai-sdk/node_modules/ai": {
+-      "version": "7.0.58",
+-      "resolved": "https://registry.npmjs.org/ai/-/ai-7.0.58.tgz",
+-      "integrity": "sha512-GfgO90CQQ0yYuoxJAUOeQ6tviyYw1BUIDygSZ1q3Ce6kSc93tYmB5eltKY/NxC0YOouAax7JvDqVnYxvIAr04Q==",
+-      "license": "Apache-2.0",
+-      "dependencies": {
+-        "@ai-sdk/gateway": "4.0.46",
+-        "@ai-sdk/provider": "4.0.7",
+-        "@ai-sdk/provider-utils": "5.0.25"
+-      },
+-      "engines": {
+-        "node": ">=22"
+-      },
+-      "peerDependencies": {
+-        "zod": "^3.25.76 || ^4.1.8"
+-      }
+-    },
+     "node_modules/@assistant-ui/react-markdown": {
+       "version": "0.14.10",
+       "resolved": "https://registry.npmjs.org/@assistant-ui/react-markdown/-/react-markdown-0.14.10.tgz",
+@@ -1669,15 +1652,6 @@
+         "node": ">=12.4.0"
+       }
+     },
+-    "node_modules/@opentelemetry/api": {
+-      "version": "1.9.0",
+-      "resolved": "https://registry.npmjs.org/@opentelemetry/api/-/api-1.9.0.tgz",
+-      "integrity": "sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg==",
+-      "license": "Apache-2.0",
+-      "engines": {
+-        "node": ">=8.0.0"
+-      }
+-    },
+     "node_modules/@opentelemetry/semantic-conventions": {
+       "version": "1.43.0",
+       "resolved": "https://registry.npmjs.org/@opentelemetry/semantic-conventions/-/semantic-conventions-1.43.0.tgz",
+@@ -3707,12 +3681,6 @@
+         "@types/ms": "*"
+       }
+     },
+-    "node_modules/@types/diff-match-patch": {
+-      "version": "1.0.36",
+-      "resolved": "https://registry.npmjs.org/@types/diff-match-patch/-/diff-match-patch-1.0.36.tgz",
+-      "integrity": "sha512-xFdR6tkm0MWvBfO8xXCSsinYxHcqkQUlcHeSpMC2ukzOb6lwQAfDmW+Qt0AvlGd8HpsS28qKsB+oPeJn9I39jg==",
+-      "license": "MIT"
+-    },
+     "node_modules/@types/estree": {
+       "version": "1.0.7",
+       "resolved": "https://registry.npmjs.org/@types/estree/-/estree-1.0.7.tgz",
+@@ -4379,29 +4347,51 @@
+       }
+     },
+     "node_modules/ai": {
+-      "version": "4.3.16",
+-      "resolved": "https://registry.npmjs.org/ai/-/ai-4.3.16.tgz",
+-      "integrity": "sha512-KUDwlThJ5tr2Vw0A1ZkbDKNME3wzWhuVfAOwIvFUzl1TPVDFAXDFTXio3p+jaKneB+dKNCvFFlolYmmgHttG1g==",
++      "version": "7.0.58",
++      "resolved": "https://registry.npmjs.org/ai/-/ai-7.0.58.tgz",
++      "integrity": "sha512-GfgO90CQQ0yYuoxJAUOeQ6tviyYw1BUIDygSZ1q3Ce6kSc93tYmB5eltKY/NxC0YOouAax7JvDqVnYxvIAr04Q==",
+       "license": "Apache-2.0",
+       "dependencies": {
+-        "@ai-sdk/provider": "1.1.3",
+-        "@ai-sdk/provider-utils": "2.2.8",
+-        "@ai-sdk/react": "1.2.12",
+-        "@ai-sdk/ui-utils": "1.2.11",
+-        "@opentelemetry/api": "1.9.0",
+-        "jsondiffpatch": "0.6.0"
++        "@ai-sdk/gateway": "4.0.46",
++        "@ai-sdk/provider": "4.0.7",
++        "@ai-sdk/provider-utils": "5.0.25"
+       },
+       "engines": {
+-        "node": ">=18"
++        "node": ">=22"
+       },
+       "peerDependencies": {
+-        "react": "^18 || ^19 || ^19.0.0-rc",
+-        "zod": "^3.23.8"
++        "zod": "^3.25.76 || ^4.1.8"
++      }
++    },
++    "node_modules/ai/node_modules/@ai-sdk/provider": {
++      "version": "4.0.7",
++      "resolved": "https://registry.npmjs.org/@ai-sdk/provider/-/provider-4.0.7.tgz",
++      "integrity": "sha512-6or44XprPzKbr8zkmzosowSE0pxkvJcoojBL+mCZvPUt3kvXp3XSNqeVun9golb1acEfSo6yaEBRT18h2VU+1Q==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "json-schema": "^0.4.0"
+       },
+-      "peerDependenciesMeta": {
+-        "react": {
+-          "optional": true
+-        }
++      "engines": {
++        "node": ">=22"
++      }
++    },
++    "node_modules/ai/node_modules/@ai-sdk/provider-utils": {
++      "version": "5.0.25",
++      "resolved": "https://registry.npmjs.org/@ai-sdk/provider-utils/-/provider-utils-5.0.25.tgz",
++      "integrity": "sha512-xscPPHCSjCHWrdhai25sbHCJeKNLW/3D1uSpUZa4cEtTKXA8OnPQ3+Rfu1SmM5Ea/Mf8Dfn3cllw9zeMzo/zFA==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@ai-sdk/provider": "4.0.7",
++        "@standard-schema/spec": "^1.1.0",
++        "@workflow/serde": "4.1.0",
++        "eventsource-parser": "^3.0.8",
++        "undici": "^7.28.0"
++      },
++      "engines": {
++        "node": ">=22"
++      },
++      "peerDependencies": {
++        "zod": "^3.25.76 || ^4.1.8"
+       }
+     },
+     "node_modules/ajv": {
+@@ -5381,12 +5371,6 @@
+         "url": "https://github.com/sponsors/wooorm"
+       }
+     },
+-    "node_modules/diff-match-patch": {
+-      "version": "1.0.5",
+-      "resolved": "https://registry.npmjs.org/diff-match-patch/-/diff-match-patch-1.0.5.tgz",
+-      "integrity": "sha512-IayShXAgj/QMXgB0IWmKx+rOPuGMhqm5w6jvFxmVenXKIzRqTAAsbBPT3kWQeGANj3jGgvcvv4yK6SxqYmikgw==",
+-      "license": "Apache-2.0"
+-    },
+     "node_modules/doctrine": {
+       "version": "2.1.0",
+       "resolved": "https://registry.npmjs.org/doctrine/-/doctrine-2.1.0.tgz",
+@@ -7228,35 +7212,6 @@
+         "json5": "lib/cli.js"
+       }
+     },
+-    "node_modules/jsondiffpatch": {
+-      "version": "0.6.0",
+-      "resolved": "https://registry.npmjs.org/jsondiffpatch/-/jsondiffpatch-0.6.0.tgz",
+-      "integrity": "sha512-3QItJOXp2AP1uv7waBkao5nCvhEv+QmJAd38Ybq7wNI74Q+BBmnLn4EDKz6yI9xGAIQoUF87qHt+kc1IVxB4zQ==",
+-      "license": "MIT",
+-      "dependencies": {
+-        "@types/diff-match-patch": "^1.0.36",
+-        "chalk": "^5.3.0",
+-        "diff-match-patch": "^1.0.5"
+-      },
+-      "bin": {
+-        "jsondiffpatch": "bin/jsondiffpatch.js"
+-      },
+-      "engines": {
+-        "node": "^18.0.0 || >=20.0.0"
+-      }
+-    },
+-    "node_modules/jsondiffpatch/node_modules/chalk": {
+-      "version": "5.4.1",
+-      "resolved": "https://registry.npmjs.org/chalk/-/chalk-5.4.1.tgz",
+-      "integrity": "sha512-zgVZuo2WcZgfUEmsn6eO3kINexW8RAE4maiQ8QNs8CtpPCSyMiYsULR3HQYkm3w8FIA3SberyMJMSldGsW+U3w==",
+-      "license": "MIT",
+-      "engines": {
+-        "node": "^12.17.0 || ^14.13 || >=16.0.0"
+-      },
+-      "funding": {
+-        "url": "https://github.com/chalk/chalk?sponsor=1"
+-      }
+-    },
+     "node_modules/jsx-ast-utils": {
+       "version": "3.3.5",
+       "resolved": "https://registry.npmjs.org/jsx-ast-utils/-/jsx-ast-utils-3.3.5.tgz",
+diff --git a/package.json b/package.json
+index 4296693..e933217 100644
+--- a/package.json
++++ b/package.json
+@@ -30,7 +30,7 @@
+     "@radix-ui/react-tooltip": "^1.2.7",
+     "@radix-ui/react-use-controllable-state": "^1.2.2",
+     "@shikijs/transformers": "^3.7.0",
+-    "ai": "^4.3.16",
++    "ai": "^7.0.58",
+     "better-auth": "^1.6.26",
+     "class-variance-authority": "^0.7.1",
+     "clsx": "^2.1.1",
+diff --git a/src/types/index.ts b/src/types/index.ts
+new file mode 100644
+index 0000000..0f8c2c3
+--- /dev/null
++++ b/src/types/index.ts
+@@ -0,0 +1,44 @@
++import { UIMessage } from 'ai';
++
++// RAG source type (streamed as data part)
++export interface AppSource {
++  id: string;
++  documentId: string;
++  filename: string;
++  page: number;
++  snippet: string;
++  score: number;
++}
++
++// Custom UI message with source data parts
++export type MyUIMessage = UIMessage<
++  never,
++  {
++    sources: {
++      sources: AppSource[];
++    };
++    notification: {
++      message: string;
++      level: 'info' | 'warning' | 'error';
++    };
++  }
++>;
++
++// API input types
++export interface CreateChatInput {
++  title?: string;
++  collectionId?: string;
++}
++
++export interface CreateDocumentInput {
++  filename: string;
++  originalName: string;
++  fileSize: number;
++  mimeType: string;
++  collectionId?: string;
++}
++
++export interface CreateCollectionInput {
++  name: string;
++  description?: string;
++}
