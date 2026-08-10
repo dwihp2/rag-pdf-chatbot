@@ -7,26 +7,26 @@ export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const chats = await prisma.chat.findMany({
-    where: { userId: session.user.id },
+  const collections = await prisma.collection.findMany({
+    where: {
+      OR: [
+        { ownerId: session.user.id },
+        { members: { some: { userId: session.user.id } } },
+      ],
+    },
+    include: { _count: { select: { documents: true, chats: true } } },
     orderBy: { updatedAt: "desc" },
-    select: { id: true, title: true, updatedAt: true, collectionId: true },
   });
-  return NextResponse.json(chats);
+  return NextResponse.json(collections);
 }
 
 export async function POST(req: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { title, collectionId } = await req.json();
-  const chat = await prisma.chat.create({
-    data: {
-      userId: session.user.id,
-      title: title || "New Chat",
-      collectionId: collectionId || null,
-    },
+  const { name, description } = await req.json();
+  const collection = await prisma.collection.create({
+    data: { name, description, ownerId: session.user.id },
   });
-  return NextResponse.json(chat);
+  return NextResponse.json(collection);
 }
-

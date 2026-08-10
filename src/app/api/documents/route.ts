@@ -7,26 +7,19 @@ export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const chats = await prisma.chat.findMany({
+  const documents = await prisma.document.findMany({
     where: { userId: session.user.id },
-    orderBy: { updatedAt: "desc" },
-    select: { id: true, title: true, updatedAt: true, collectionId: true },
+    orderBy: { uploadedAt: "desc" },
+    include: { _count: { select: { chunks: true } } },
   });
-  return NextResponse.json(chats);
+  return NextResponse.json(documents);
 }
 
-export async function POST(req: Request) {
+export async function DELETE(req: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { title, collectionId } = await req.json();
-  const chat = await prisma.chat.create({
-    data: {
-      userId: session.user.id,
-      title: title || "New Chat",
-      collectionId: collectionId || null,
-    },
-  });
-  return NextResponse.json(chat);
+  const { id } = await req.json();
+  await prisma.document.deleteMany({ where: { id, userId: session.user.id } });
+  return NextResponse.json({ success: true });
 }
-

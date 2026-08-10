@@ -11,13 +11,21 @@ export async function GET(
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const chat = await prisma.chat.findFirst({
-    where: { id, userId: session.user.id },
-    include: { messages: { orderBy: { createdAt: "asc" } } },
+  const collection = await prisma.collection.findFirst({
+    where: {
+      id,
+      OR: [
+        { ownerId: session.user.id },
+        { members: { some: { userId: session.user.id } } },
+      ],
+    },
+    include: {
+      documents: { include: { document: true } },
+      chats: { select: { id: true, title: true, updatedAt: true } },
+    },
   });
-  if (!chat) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
-  return NextResponse.json(chat);
+  if (!collection) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  return NextResponse.json(collection);
 }
 
 export async function DELETE(
@@ -28,7 +36,6 @@ export async function DELETE(
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  await prisma.chat.deleteMany({ where: { id, userId: session.user.id } });
+  await prisma.collection.deleteMany({ where: { id, ownerId: session.user.id } });
   return NextResponse.json({ success: true });
 }
-
