@@ -1,168 +1,155 @@
-import { openai } from '@ai-sdk/openai';
-import { streamText } from "ai";
-import { vectorService } from "@/lib/vector-service";
-import { documentProcessor } from "@/lib/document-processor";
-import { databaseService } from "@/lib/database";
+import { deepseek } from "@ai-sdk/deepseek";
+import {
+  convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  streamText,
+  toUIMessageStream,
+} from "ai";
+import { auth } from "@/lib/auth-server";
+import { prisma } from "@/lib/db";
+import { retrieveContext } from "@/lib/retrieval";
+import type { MyUIMessage } from "@/types";
+import { Prisma } from "@prisma/client";
+import { headers } from "next/headers";
+
+// Extract plain text from a UIMessage (v7 messages use `parts`, older clients send flat `content`)
+function messageText(message: MyUIMessage): string {
+  if (message.parts) {
+    return message.parts
+      .filter((p): p is { type: "text"; text: string } => p.type === "text")
+      .map((p) => p.text)
+      .join("");
+  }
+  return (message as unknown as { content?: string }).content ?? "";
+}
 
 export async function POST(req: Request) {
   try {
-    const { messages, chatId } = await req.json();
-    const latestMessage = messages[messages.length - 1].content;
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+    if (!session) {
+      return new Response("Unauthorized", { status: 401 });
+    }
 
-    // Save user message to database if chatId is provided
-    const activeChatId = chatId;
-    if (activeChatId && latestMessage) {
-      await databaseService.createMessage({
+    const { messages, chatId } = (await req.json()) as {
+      messages: MyUIMessage[];
+      chatId?: string;
+    };
+    const latestMessage = messageText(messages[messages.length - 1]);
+
+    // Get or create chat
+    let activeChatId = chatId;
+    if (!activeChatId) {
+      const chat = await prisma.chat.create({
+        data: {
+          userId: session.user.id,
+          title: latestMessage.substring(0, 50),
+        },
+      });
+      activeChatId = chat.id;
+    }
+
+    // Save user message
+    await prisma.message.create({
+      data: {
         chatId: activeChatId,
-        role: 'user',
+        role: "user",
         content: latestMessage,
-      });
-    }
+      },
+    });
 
-    console.log("🔍 Searching for relevant documents...");
+    // Retrieve context
+    const { context, sources } = await retrieveContext(latestMessage);
 
-    // Generate embedding for the query
-    const queryEmbedding = await documentProcessor.generateQueryEmbedding(latestMessage);
+    const systemMessage = `### Task:
+Respond to the user query using the provided context. You MUST include inline citations in the format [N] for EVERY factual claim you make that is supported by the context. N refers to the [Document N] marker in the context.
 
-    // Search for relevant documents with lower threshold for better recall
-    const searchResults = await vectorService.searchSimilar(queryEmbedding, 5, 0.2);
+### Citation Rules:
+- EVERY factual claim MUST have a citation: "The sky is blue. [1]"
+- Place punctuation BEFORE the citation: "This is correct. [1]"
+- NOT: "This is correct [1]."
+- Multiple sources for one claim: "This is well-documented. [1], [3]"
+- If you don't know or the context doesn't cover it, say so honestly — do NOT fabricate citations.
 
-    // Format the retrieved documents for context
-    let context = "";
-    const sources: Array<{
-      filename: string;
-      page: number;
-      text: string;
-      score: number;
-    }> = [];
+### Response Format:
+- Prefer bullet points or numbered lists for structured information
+- Keep responses clear and concise
+- Respond in the same language as the user
 
-    if (searchResults.length > 0) {
-      context = "Here is information retrieved from the documents:\n\n";
+<context>
+${context}
+</context>`;
 
-      searchResults.forEach((result, index) => {
-        context += `[Document ${index + 1}] ${result.payload.text}\n\n`;
-
-        const source = {
-          filename: result.payload.source.filename,
-          page: result.payload.source.page,
-          text: result.payload.text.substring(0, 150) + "...",
-          score: result.score,
-        };
-        sources.push(source);
-      });
-
-      console.log(`✅ Found ${searchResults.length} relevant documents`);
-    } else {
-      context = "No relevant information found in the documents.";
-      console.log("⚠️ No relevant documents found");
-    }
-
-    const systemMessage = `
-    ### Task:
-  Respond to the user query using the provided context, incorporating inline citations in the format [id] **only when the <source> tag includes an explicit id attribute** (e.g., <source id="1">).
-
-  ### Response Format Priority:
-  - **Prioritize bullet points or numbered lists** when the information can be clearly organized this way
-  - Use structured formatting (bullets, numbers) for multiple items, steps, features, or comparisons
-  - Only use paragraph format when the content flows better as continuous text
-
-  ### Citation Format Rules:
-  - **CRITICAL: Place punctuation BEFORE citations, not after**
-  - ✅ Correct: "This is a statement. [1]"
-  - ❌ Wrong: "This is a statement [1]."
-  - Citations should appear at the end of sentences, after periods
-  - Multiple citations should be grouped: [1], [2]
-  - Always maintain proper sentence structure with punctuation before citations
-
-  ### Guidelines:
-  - If you don't know the answer, clearly state that.
-  - If uncertain, ask the user for clarification.
-  - Respond in the same language as the user's query.
-  - If the context is unreadable or of poor quality, inform the user and provide the best possible answer.
-  - If the answer isn't present in the context but you possess the knowledge, explain this to the user and provide the answer using your own understanding.
-  - **Only include inline citations using [id] (e.g., [1], [2]) when the <source> tag includes an id attribute.**
-  - Do not cite if the <source> tag does not contain an id attribute.
-  - Do not use XML tags in your response.
-  - Ensure citations are concise and directly related to the information provided.
-  - Always use the provided context to answer the user's questions.
-
-  ### Example of Proper Citation with Structured Format:
-  If the user asks about benefits of a method, prioritize this format:
-  **Benefits of the proposed method:**
-  • Increases efficiency by 20%. [1]
-  • Reduces processing time by 15%. [2]
-  • Improves accuracy in data analysis. [1]
-
-  ### Output:
-  Provide a clear and direct response to the user's query using bullet points or numbered lists when appropriate, including inline citations in the format [id] with proper punctuation placement (punctuation before citations).
-
-  <context>
-  ${context}
-  </context>
-  `;
-
-    // Build system message with context
-    //   const systemMessage = `You are a helpful assistant that answers questions based on the provided documents. 
-    // Use the context information to answer the user's questions to the best of your ability.
-    // If you don't know the answer or can't find relevant information in the context, 
-    // say so honestly rather than making up an answer.
-    // Always cite your sources by mentioning which document and page number you got the information from.
-    // Always respond in Indonesian language.
-
-    // Context information:
-    // ${context}`;
-
-    console.log("🤖 Generating AI response...");
-
-    // Stream the response using AI SDK
-    const result = streamText({
-      model: openai("gpt-4.1-nano"),
-      system: systemMessage,
-      messages,
-      temperature: 0.5,
-      onFinish: async ({ text, usage }) => {
-        console.log("✅ Response generated successfully");
-        console.log("Token usage:", usage);
-        console.log("Sources:", sources.length);
-
-        // Save assistant message to database
-        if (activeChatId && text) {
-          await databaseService.createMessage({
-            chatId: activeChatId,
-            role: 'assistant',
-            content: text,
-            sources: sources.length > 0 ? sources : undefined,
+    const stream = createUIMessageStream<MyUIMessage>({
+      execute: async ({ writer }) => {
+        // Stream sources as first-class data parts
+        if (sources.length > 0) {
+          writer.write({
+            type: "data-sources",
+            id: "sources",
+            data: { sources },
           });
-
-          // Generate chat title from first message if it's still "New Chat"
-          const chat = await databaseService.getChatById(activeChatId);
-          if (chat && chat.title === 'New Chat') {
-            await databaseService.generateChatTitle(activeChatId);
-          }
+        } else {
+          // Stream notification
+          writer.write({
+            type: "data-notification",
+            data: {
+              message:
+                "No relevant documents found. Answering from general knowledge.",
+              level: "warning",
+            },
+            transient: true,
+          });
         }
+
+        const result = streamText({
+          model: deepseek("deepseek-v4-pro"),
+          system: systemMessage,
+          messages: await convertToModelMessages(messages),
+          temperature: 0.5,
+          onEnd: async ({ text }) => {
+            // Save assistant message with sources
+            await prisma.message.create({
+              data: {
+                chatId: activeChatId,
+                role: "assistant",
+                content: text,
+                sources:
+                  sources.length > 0
+                    ? (sources as unknown as Prisma.InputJsonValue)
+                    : undefined,
+              },
+            });
+
+            // Auto-title if "New Chat"
+            const chat = await prisma.chat.findUnique({
+              where: { id: activeChatId },
+            });
+            if (chat && chat.title === "New Chat") {
+              await prisma.chat.update({
+                where: { id: activeChatId },
+                data: { title: latestMessage.substring(0, 50) },
+              });
+            }
+          },
+        });
+
+        writer.merge(toUIMessageStream({ stream: result.stream }));
       },
     });
 
-    // Return the response with sources in headers
-    // Sanitize sources for header transmission (remove problematic Unicode characters)
-    const sanitizedSources = sources.map(source => ({
-      ...source,
-      text: source.text.replace(/[^\x00-\xFF]/g, ""), // Remove non-ASCII characters
-    }));
-
-    return result.toDataStreamResponse({
-      headers: {
-        "X-Sources": JSON.stringify({ sources: sanitizedSources }),
-        "X-Chat-Id": activeChatId || "",
-      },
+    return createUIMessageStreamResponse({
+      stream,
+      headers: { "X-Chat-Id": activeChatId },
     });
-
   } catch (error) {
     console.error("❌ Error in chat API:", error);
     return new Response(
       JSON.stringify({
         error: "There was an error processing your request",
-        details: error instanceof Error ? error.message : "Unknown error"
+        details: error instanceof Error ? error.message : "Unknown error",
       }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
