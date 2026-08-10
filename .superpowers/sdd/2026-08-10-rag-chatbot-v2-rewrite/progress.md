@@ -7,7 +7,7 @@
 
 ## Global Constraints (verbatim from plan):
 - Fresh database — no migration of existing data
-- DeepSeek deepseek-v4-pro for chat, OpenAI text-embedding-3-small for embeddings (1536-dim)
+- DeepSeek deepseek-chat for chat, OpenAI text-embedding-3-small for embeddings (1536-dim)
 - Better Auth manages its own tables; email/password auth with DB sessions
 - All API routes under (dashboard) require authentication
 - Phase 1 only: PDF upload, no text/md/docs yet
@@ -39,4 +39,19 @@ Task 2.4: complete (commits 46e9192, review clean)
 ## Milestone 2 Complete: Database & Auth
 
 Task 3.1: complete (commits 506db1b..576ce11, review clean)
+Task 3.2: complete (commits 8554253..8b9f1d4, review clean)
+Task 3.2: minor (deferred): failed PDFs silently swallowed in processMultiplePDFs — fix in upload-route rewrite task
+Task 3.3: complete (commits 88c4d50, review clean after manual commit)
+Task 3.3: minor (deferred): snippet adds "..." even when text ≤ 150 chars (cosmetic, plan-inherited)
+Task 3.4: complete (commits 98978cf..6f5c6d9, review clean after 2 fix rounds)
+Task 3.4: fix round 1/5 (1 addressed, 1 open — IDOR fixed, model ID missed; commits 98978cf..0d063f9)
+Task 3.4: fix round 2/5 (2 addressed, 0 open — model ID + garbled string; commits 0d063f9..6f5c6d9)
+
+## Agent Guidance
+- Do NOT read node_modules files. Use package.json, installed types, or official docs instead.
+- If a type/API is unclear, check the package's README/docs or make a reasonable inference rather than exploring node_modules.
+Task 3.5: complete (commits 7d33e05, review conditional pass)
+Task 3.5: minor (deferred): upload route no collection ownership check yet; DELETE /api/documents redundant with [id] route; missing input validation; DELETE returns success even if no row deleted
+Task 4.1: complete (commits 7d33e05..a22e2ff, review clean after 1 fix round)
+Task 4.1: fix round 1/5 (1 addressed, 0 open — restored public landing page; commits 7d33e05..a22e2ff)
 
