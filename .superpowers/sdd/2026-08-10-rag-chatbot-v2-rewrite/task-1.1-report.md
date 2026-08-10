@@ -48,13 +48,29 @@
 - src/app/chats/ (whole dir)
 - src/app/documents/ (whole dir)
 
-## Packages Uninstalled (14)
+## Packages Uninstalled (21)
 
 @qdrant/js-client-rest, pdf-parse, langchain, @langchain/community,
 @ai-sdk/anthropic, @radix-ui/react-collapsible, @radix-ui/react-hover-card,
 @radix-ui/react-progress, @radix-ui/react-tabs, streamdown,
 @icons-pack/react-simple-icons, date-fns, embla-carousel-react,
 use-stick-to-bottom
+
+Additional dead/transitive packages removed alongside the planned 14:
+@langchain/anthropic, @langchain/cohere, @langchain/core, @langchain/openai,
+@vercel/postgres, cohere-ai, react-markdown
+
+## Fix follow-up (post-review)
+
+Also deleted (kept importing removed packages):
+- src/components/ui/carousel.tsx (embla-carousel-react)
+- src/components/ui/ai-elements/ (streamdown, use-stick-to-bottom)
+- src/components/ui/kibo-ui/ (langchain, @icons-pack/react-simple-icons)
+
+`src/lib/document-processor.ts` still imports `langchain/text_splitter` and
+`@langchain/community` — intentionally left: it is consumed by live routes
+(`api/chat`, `api/upload`) and is scheduled for rewrite in Task 2.x
+(document-processor Step 1).
 
 ## globals.css
 
