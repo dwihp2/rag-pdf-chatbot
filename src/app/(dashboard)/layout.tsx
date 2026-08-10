@@ -1,5 +1,6 @@
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import { FloatingChat } from "@/components/chat/floating-chat";
 
 export default function DashboardLayout({
   children,
@@ -11,6 +12,7 @@ export default function DashboardLayout({
       <div className="flex h-screen">
         <AppSidebar />
         <main className="flex-1 overflow-hidden">{children}</main>
+        <FloatingChat />
       </div>
     </AuthGuard>
   );
