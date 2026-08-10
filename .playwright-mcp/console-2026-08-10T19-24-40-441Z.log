@@ -1,0 +1,30 @@
+[     501ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:16383
+[     871ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14983
+[     925ms] [LOG] [Fast Refresh] done in 156ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14847
+[   10028ms] Error: message undefined not found
+    at AbstractChat.regenerate (http://localhost:3000/_next/static/chunks/node_modules_ai_dist_index_61bbaff6.js:16730:23)
+    at useAISDKRuntime.useExternalStoreRuntime[runtime] [as onReload] (http://localhost:3000/_next/static/chunks/node_modules_%40assistant-ui_58234197._.js:2848:35)
+    at ExternalStoreThreadRuntimeCore.startRun (http://localhost:3000/_next/static/chunks/node_modules_%40assistant-ui_core_dist_f946d9c6._.js:5888:27)
+[   10126ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14983
+[   10421ms] [LOG] [Fast Refresh] done in 395ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14847
+[   11036ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/chat:0
+[   15809ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14983
+[   15858ms] [LOG] [Fast Refresh] done in 150ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14847
+[   83802ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14983
+[   86364ms] [LOG] [Fast Refresh] done in 2664ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14847
+[   86471ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14983
+[   87736ms] [LOG] [Fast Refresh] done in 1367ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14847
+[   98405ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14983
+[   98648ms] [LOG] [Fast Refresh] done in 344ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14847
+[  118924ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14983
+[  119238ms] [LOG] [Fast Refresh] done in 415ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14847
+[  122252ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14983
+[  123446ms] [LOG] [Fast Refresh] done in 1295ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14847
+[  125157ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/upload:0
+[  125174ms] Error: Failed to process PDF
+    at DocumentsPage.useCallback[handleUpload] (http://localhost:3000/_next/static/chunks/src_452ff2b5._.js:465:27)
+    at async UploadZone.useCallback[onDrop] (http://localhost:3000/_next/static/chunks/src_452ff2b5._.js:33:21)
+[  126853ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14983
+[  129305ms] [LOG] [Fast Refresh] done in 2735ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14847
+[  135827ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14983
+[  136093ms] [LOG] [Fast Refresh] done in 367ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14847

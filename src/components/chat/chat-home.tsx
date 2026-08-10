@@ -2,9 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, Globe, Folder } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 const suggestions = [
@@ -14,7 +15,13 @@ const suggestions = [
   "What are the conclusions in my documents?",
 ];
 
-export function ChatHome() {
+export function ChatHome({
+  collectionId,
+  collectionName,
+}: {
+  collectionId?: string;
+  collectionName?: string;
+}) {
   const router = useRouter();
   const [input, setInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -26,7 +33,10 @@ export function ChatHome() {
       const res = await fetch("/api/chats", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: text.substring(0, 50) }),
+        body: JSON.stringify({
+          title: text.substring(0, 50),
+          collectionId: collectionId ?? undefined,
+        }),
       });
       if (!res.ok) throw new Error("Failed to create chat");
       const chat = await res.json();
@@ -44,10 +54,27 @@ export function ChatHome() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full max-w-2xl mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-2">What would you like to know?</h1>
+    <div className="flex flex-col items-center justify-center w-full max-w-2xl mx-auto">
+      {/* Scope indicator */}
+      {collectionName ? (
+        <Badge variant="secondary" className="mb-4 gap-1.5">
+          <Folder className="h-3 w-3" />
+          Collection: {collectionName}
+        </Badge>
+      ) : (
+        <Badge variant="outline" className="mb-4 gap-1.5">
+          <Globe className="h-3 w-3" />
+          Global Chat — searches all documents
+        </Badge>
+      )}
+
+      <h1 className="text-3xl font-bold mb-2">
+        {collectionName ? `Ask ${collectionName}` : "What would you like to know?"}
+      </h1>
       <p className="text-muted-foreground mb-8 text-center">
-        Ask questions about your documents. I&apos;ll find the answers and cite my sources.
+        {collectionName
+          ? `Ask questions about documents in this collection. I'll find the answers and cite my sources.`
+          : "Ask questions about your documents. I'll find the answers and cite my sources."}
       </p>
 
       <div className="grid grid-cols-2 gap-3 w-full mb-8">

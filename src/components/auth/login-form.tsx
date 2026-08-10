@@ -18,10 +18,10 @@ export function LoginForm() {
     setError("");
     setLoading(true);
     try {
-      const result = await signIn.email({ email, password });
-      if (result.error) {
-        setError(result.error.message ?? "Login failed");
-      } else {
+      const { data, error } = await signIn.email({ email, password });
+      if (error) {
+        setError(error.message ?? "Login failed");
+      } else if (data) {
         router.push("/");
         router.refresh();
       }

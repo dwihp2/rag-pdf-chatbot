@@ -24,6 +24,38 @@ function messageText(message: MyUIMessage): string {
   return (message as unknown as { content?: string }).content ?? "";
 }
 
+export async function GET(req: Request) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) return new Response("Unauthorized", { status: 401 });
+
+  const { searchParams } = new URL(req.url);
+  const chatId = searchParams.get("chatId");
+  if (!chatId) return new Response("Missing chatId", { status: 400 });
+
+  // Verify ownership
+  const chat = await prisma.chat.findFirst({
+    where: { id: chatId, userId: session.user.id },
+    select: { id: true },
+  });
+  if (!chat) return new Response("Not found", { status: 404 });
+
+  const messages = await prisma.message.findMany({
+    where: { chatId },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, role: true, content: true, sources: true, createdAt: true },
+  });
+
+  // Convert to UI message format that assistant-ui expects
+  const uiMessages = messages.map((m) => ({
+    id: m.id,
+    role: m.role as "user" | "assistant",
+    parts: [{ type: "text" as const, text: m.content }],
+    createdAt: m.createdAt,
+  }));
+
+  return Response.json({ messages: uiMessages });
+}
+
 export async function POST(req: Request) {
   try {
     const session = await auth.api.getSession({
@@ -77,14 +109,14 @@ export async function POST(req: Request) {
     );
 
     const systemMessage = `### Task:
-Respond to the user query using the provided context. You MUST include inline citations in the format [N] for EVERY factual claim you make that is supported by the context. N refers to the [Document N] marker in the context.
+Respond to the user query using the provided context. When the context contains relevant information, cite sources using [N] format where N refers to the [Document N] marker in the context.
 
 ### Citation Rules:
-- EVERY factual claim MUST have a citation: "The sky is blue. [1]"
+- Cite factual claims that are supported by the context: "The sky is blue. [1]"
 - Place punctuation BEFORE the citation: "This is correct. [1]"
-- NOT: "This is correct [1]."
 - Multiple sources for one claim: "This is well-documented. [1], [3]"
-- If you don't know or the context doesn't cover it, say so honestly — do NOT fabricate citations.
+- If the context says "No relevant information found", answer from general knowledge but clearly state that the documents don't contain relevant information. Do NOT fabricate citations.
+- Only cite when the context actually contains usable information.
 
 ### Response Format:
 - Prefer bullet points or numbered lists for structured information

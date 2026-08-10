@@ -1,0 +1,38 @@
+- generic [ref=f2e1]:
+  - generic [ref=f2e60]:
+    - complementary [ref=f2e61]:
+      - generic [ref=f2e62]: RAG Chat
+      - link [ref=f2e67] [cursor=pointer]:
+        - /url: /
+        - button "New Chat" [ref=f2e68]
+      - navigation [ref=f2e69]:
+        - link "Chat" [ref=f2e70] [cursor=pointer]:
+          - /url: /
+        - link "Documents" [ref=f2e73] [cursor=pointer]:
+          - /url: /documents
+        - link "Collections" [ref=f2e77] [cursor=pointer]:
+          - /url: /collections
+      - button "Sign Out" [ref=f2e81]
+    - main [ref=f2e82]:
+      - generic [ref=f2e86]:
+        - generic [ref=f2e87]:
+          - paragraph [ref=f2e91]: hello
+          - generic [ref=f2e92]: ●
+        - generic [ref=f2e97]:
+          - textbox "Message input" [active] [ref=f2e98]:
+            - /placeholder: Send a message...
+          - generic [ref=f2e99]:
+            - button "Add Attachment" [ref=f2e100]
+            - button "Stop generating" [ref=f2e103]
+    - button "Open chat" [ref=f2e105]
+  - region "Notifications alt+T"
+  - alert [ref=f2e13]
+  - generic [ref=f2e18] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=f2e19]
+    - generic [ref=f2e108]:
+      - button "Open issues overlay" [ref=f2e109]:
+        - generic [ref=f2e110]:
+          - generic [ref=f2e111]: "0"
+          - generic [ref=f2e112]: "1"
+        - generic [ref=f2e113]: Issue
+      - button "Collapse issues badge" [ref=f2e114]

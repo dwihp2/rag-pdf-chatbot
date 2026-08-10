@@ -12,7 +12,7 @@ export async function retrieveContext(
   const results = await vectorService.searchSimilar(
     queryEmbedding,
     8,
-    0.6,
+    0.35,
     collectionId
   );
 

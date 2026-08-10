@@ -150,7 +150,7 @@ model DocumentChunk {
   text       String
   pageNumber Int
   chunkIndex Int
-  embedding  Unsupported("vector(1536)")
+  embedding  Unsupported("vector(3072)")
   createdAt  DateTime                    @default(now())
 
   document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)

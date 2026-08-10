@@ -11,7 +11,7 @@ export default function DashboardLayout({
     <AuthGuard>
       <div className="flex h-screen">
         <AppSidebar />
-        <main className="flex-1 overflow-hidden">{children}</main>
+        <main className="flex-1 overflow-auto">{children}</main>
         <FloatingChat />
       </div>
     </AuthGuard>

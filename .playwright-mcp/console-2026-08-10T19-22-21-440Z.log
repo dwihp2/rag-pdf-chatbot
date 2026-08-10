@@ -1,0 +1,23 @@
+[     275ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:3000/login:0
+[     339ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_2ce9398a._.js:16383
+[     545ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14983
+[     683ms] [LOG] [Fast Refresh] done in 239ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14847
+[    4747ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14983
+[    7061ms] [LOG] [Fast Refresh] done in 2416ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14847
+[    7167ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14983
+[    7424ms] [LOG] [Fast Refresh] done in 357ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14847
+[   20397ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14983
+[   20622ms] [LOG] [Fast Refresh] done in 327ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14847
+[   31531ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14983
+[   32765ms] [LOG] [Fast Refresh] done in 1334ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14847
+[   33151ms] Error: message undefined not found
+    at AbstractChat.regenerate (http://localhost:3000/_next/static/chunks/node_modules_ai_dist_index_61bbaff6.js:16730:23)
+    at useAISDKRuntime.useExternalStoreRuntime[runtime] [as onReload] (http://localhost:3000/_next/static/chunks/node_modules_%40assistant-ui_58234197._.js:2848:35)
+    at ExternalStoreThreadRuntimeCore.startRun (http://localhost:3000/_next/static/chunks/node_modules_%40assistant-ui_core_dist_f946d9c6._.js:5888:27)
+[   33232ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14983
+[   34711ms] [LOG] [Fast Refresh] done in 1581ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14847
+[   35295ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/chat:0
+[  107214ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14983
+[  107478ms] [LOG] [Fast Refresh] done in 365ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14847
+[  119459ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14983
+[  119684ms] [LOG] [Fast Refresh] done in 326ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_8f19e6fb._.js:14847

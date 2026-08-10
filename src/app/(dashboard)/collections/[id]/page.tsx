@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
+import { ChatHome } from "@/components/chat/chat-home";
 
 interface Doc {
   id: string;
@@ -190,6 +191,22 @@ export default function CollectionDetailPage() {
           Delete
         </Button>
       </div>
+
+      {/* Ask this collection — primary action */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            Ask this collection
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ChatHome
+            collectionId={collection.id}
+            collectionName={collection.name}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">

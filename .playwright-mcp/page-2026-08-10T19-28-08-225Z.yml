@@ -1,0 +1,44 @@
+- generic [ref=f5e1]:
+  - generic [ref=f5e103]:
+    - complementary [ref=f5e104]:
+      - generic [ref=f5e105]: RAG Chat
+      - link [ref=f5e110] [cursor=pointer]:
+        - /url: /
+        - button "New Chat" [ref=f5e111]
+      - navigation [ref=f5e112]:
+        - link "Chat" [ref=f5e113] [cursor=pointer]:
+          - /url: /
+        - link "Documents" [ref=f5e116] [cursor=pointer]:
+          - /url: /documents
+        - link "Collections" [ref=f5e120] [cursor=pointer]:
+          - /url: /collections
+      - button "Sign Out" [ref=f5e124]
+    - main [ref=f5e125]:
+      - generic [ref=f5e129]:
+        - generic [ref=f5e130]:
+          - paragraph [ref=f5e134]: test
+          - generic [ref=f5e135]:
+            - paragraph [ref=f5e138]: It seems like you're testing the system. I'm ready to help with any questions you have. However, I don't have any information in the provided context to answer a specific question, so please feel free to ask something, and I'll do my best to assist you based on the available documents.
+            - generic [ref=f5e140]:
+              - button "Copy" [ref=f5e141]
+              - button "Refresh" [ref=f5e143]
+              - button "More" [ref=f5e145]
+        - generic [ref=f5e149]:
+          - textbox "Message input" [ref=f5e150]:
+            - /placeholder: Send a message...
+          - generic [ref=f5e151]:
+            - button "Add Attachment" [ref=f5e152]
+            - generic [ref=f5e154]:
+              - button "Send message" [disabled]
+    - button "Open chat" [ref=f5e156]
+  - region "Notifications alt+T"
+  - alert [ref=f5e4]
+  - generic [ref=f5e9] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=f5e10]
+    - generic [ref=f5e159]:
+      - button "Open issues overlay" [ref=f5e160]:
+        - generic [ref=f5e161]:
+          - generic [ref=f5e162]: "0"
+          - generic [ref=f5e163]: "1"
+        - generic [ref=f5e164]: Issue
+      - button "Collapse issues badge" [ref=f5e165]

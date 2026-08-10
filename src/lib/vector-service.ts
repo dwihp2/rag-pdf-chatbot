@@ -1,9 +1,8 @@
 import { google } from "@ai-sdk/google";
 import { embed, embedMany } from "ai";
-import { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 
-const EMBEDDING_MODEL = "text-embedding-004";
+const EMBEDDING_MODEL = "gemini-embedding-001";
 const BATCH_SIZE = 10;
 
 export const vectorService = {
@@ -12,7 +11,7 @@ export const vectorService = {
     for (let i = 0; i < texts.length; i += BATCH_SIZE) {
       const batch = texts.slice(i, i + BATCH_SIZE);
       const { embeddings: batchEmbeddings } = await embedMany({
-        model: google.textEmbeddingModel(EMBEDDING_MODEL),
+        model: google.embedding(EMBEDDING_MODEL),
         values: batch,
       });
       embeddings.push(...batchEmbeddings);
@@ -22,7 +21,7 @@ export const vectorService = {
 
   async generateQueryEmbedding(query: string): Promise<number[]> {
     const { embedding } = await embed({
-      model: google.textEmbeddingModel(EMBEDDING_MODEL),
+      model: google.embedding(EMBEDDING_MODEL),
       value: query,
     });
     return embedding;
@@ -71,26 +70,10 @@ export const vectorService = {
   ) {
     const embeddingStr = `[${queryEmbedding.join(",")}]`;
 
-    const collectionFilter = collectionId
-      ? `AND EXISTS (
-        SELECT 1 FROM "CollectionDocument" cd
-        WHERE cd."documentId" = dc."documentId"
-          AND cd."collectionId" = ${Prisma.sql`$4::uuid`}
-      )`
-      : "";
+    const hasCollection = !!collectionId;
 
-    const results = await prisma.$queryRawUnsafe<
-      Array<{
-        id: string;
-        documentId: string;
-        text: string;
-        pageNumber: number;
-        chunkIndex: number;
-        similarity: number;
-        filename: string;
-      }>
-    >(
-      `SELECT
+    const query = hasCollection
+      ? `SELECT
         dc.id,
         dc."documentId",
         dc.text,
@@ -102,14 +85,42 @@ export const vectorService = {
        JOIN "Document" d ON d.id = dc."documentId"
        WHERE d.status = 'completed'
          AND 1 - (dc.embedding <=> $1::vector) > $2
-         ${collectionFilter}
+         AND EXISTS (
+           SELECT 1 FROM "CollectionDocument" cd
+           WHERE cd."documentId" = dc."documentId"
+             AND cd."collectionId" = $4
+         )
        ORDER BY dc.embedding <=> $1::vector
-       LIMIT $3`,
-      embeddingStr,
-      threshold,
-      limit,
-      collectionId ?? null
-    );
+       LIMIT $3`
+      : `SELECT
+        dc.id,
+        dc."documentId",
+        dc.text,
+        dc."pageNumber",
+        dc."chunkIndex",
+        1 - (dc.embedding <=> $1::vector) AS similarity,
+        d.filename
+       FROM "DocumentChunk" dc
+       JOIN "Document" d ON d.id = dc."documentId"
+       WHERE d.status = 'completed'
+         AND 1 - (dc.embedding <=> $1::vector) > $2
+       ORDER BY dc.embedding <=> $1::vector
+       LIMIT $3`;
+
+    const params: (string | number | null)[] = [embeddingStr, threshold, limit];
+    if (hasCollection) params.push(collectionId!);
+
+    const results = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        documentId: string;
+        text: string;
+        pageNumber: number;
+        chunkIndex: number;
+        similarity: number;
+        filename: string;
+      }>
+    >(query, ...params);
 
     // Deduplicate by document — keep highest-scoring chunk per document
     const seen = new Set<string>();
