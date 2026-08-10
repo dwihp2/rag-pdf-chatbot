@@ -41,7 +41,15 @@ export async function POST(req: Request) {
 
     // Get or create chat
     let activeChatId = chatId;
-    if (!activeChatId) {
+    if (activeChatId) {
+      const owned = await prisma.chat.findFirst({
+        where: { id: activeChatId, userId: session.user.id },
+        select: { id: true },
+      });
+      if (!owned) {
+        return new Response("Forbidden", { status: 403 });
+      }
+    } else {
       const chat = await prisma.chat.create({
         data: {
           userId: session.user.id,
@@ -97,7 +105,7 @@ ${context}
             type: "data-notification",
             data: {
               message:
-                "No relevant documents found. Answering from general knowledge.",
+                "No relevant documenchatnd. Answering from general knowledge.",
               level: "warning",
             },
             transient: true,
