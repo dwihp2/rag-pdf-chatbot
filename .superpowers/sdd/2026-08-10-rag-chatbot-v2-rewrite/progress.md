@@ -22,3 +22,7 @@
 ---
 
 ## Task Progress:
+
+Task 1.1: complete (commits 7465163..5b13ddb, review clean after 1 fix round)
+Task 1.1: fix round 1/5 (2 addressed, 0 open — carousel/ai-elements/kibo-ui deletion, package reporting; commits 7465163..5b13ddb)
+
