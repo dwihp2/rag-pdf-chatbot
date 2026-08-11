@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { MessageSquare } from "lucide-react";
 import { useSession } from "@/lib/auth";
+import { AuthInterceptor } from "@/components/auth/auth-interceptor";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { ChatHome } from "@/components/chat/chat-home";
 import { FloatingChat } from "@/components/chat/floating-chat";
@@ -47,6 +48,7 @@ export default function HomePage() {
 
   return (
     <div className="flex h-screen">
+      <AuthInterceptor />
       <AppSidebar />
       <main className="flex-1 overflow-hidden">
         <ChatHome />

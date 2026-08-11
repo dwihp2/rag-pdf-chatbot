@@ -1,4 +1,5 @@
 import { AuthGuard } from "@/components/auth/auth-guard";
+import { AuthInterceptor } from "@/components/auth/auth-interceptor";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { FloatingChat } from "@/components/chat/floating-chat";
 
@@ -9,6 +10,7 @@ export default function DashboardLayout({
 }) {
   return (
     <AuthGuard>
+      <AuthInterceptor />
       <div className="flex h-screen">
         <AppSidebar />
         <main className="flex-1 overflow-auto">{children}</main>
