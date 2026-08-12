@@ -30,6 +30,7 @@ export function ChatHome({
     if (!text.trim() || submitting) return;
     setSubmitting(true);
     try {
+      // 1. Create the chat
       const res = await fetch("/api/chats", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -40,7 +41,27 @@ export function ChatHome({
       });
       if (!res.ok) throw new Error("Failed to create chat");
       const chat = await res.json();
-      router.push(`/chat/${chat.id}?initialMessage=${encodeURIComponent(text)}`);
+
+      // 2. Send the initial message via the chat API and wait for it to complete
+      const chatRes = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chatId: chat.id,
+          messages: [
+            {
+              id: crypto.randomUUID(),
+              role: "user",
+              parts: [{ type: "text", text }],
+            },
+          ],
+        }),
+      });
+      // Read the full streaming response to ensure the server finishes processing
+      await chatRes.text();
+
+      // 3. Navigate to the chat (history will include the response)
+      router.push(`/chat/${chat.id}`);
     } finally {
       setSubmitting(false);
     }

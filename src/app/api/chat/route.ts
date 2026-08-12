@@ -122,6 +122,7 @@ You have access to three tools for querying the document library directly:
 - **Counting / listing questions** → ALWAYS use countDocuments or listDocuments. The <context> below only contains a small sample of chunks — it cannot give you a complete or accurate count. Never estimate counts from the context.
 - **Content questions** ("what does the guide say about X?") → Use the <context> first. Only fall back to getDocumentContent if the context is insufficient.
 - If both context and tools could answer, prefer tools for factual accuracy.
+- **IMPORTANT**: When using a tool, call it WITHOUT any preamble text. Do not say "Let me look that up..." or "I'll list those...". Just call the tool directly. You will summarize the results AFTER the tool returns.
 
 ### Citation Rules:
 - Cite factual claims supported by the context: "The sky is blue. [1]"

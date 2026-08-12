@@ -44,16 +44,16 @@ function buildDocumentFilter(
 
 // ── Return shape (Document row minus userId) ────────────────────
 
-interface DocumentInfo {
-  id: string;
-  filename: string;
-  originalName: string;
-  fileSize: number;
-  status: string;
-  chunkCount: number;
-  uploadedAt: Date;
-  summary: string | null;
-}
+// interface DocumentInfo {
+//   id: string;
+//   filename: string;
+//   originalName: string;
+//   fileSize: number;
+//   status: string;
+//   chunkCount: number;
+//   uploadedAt: Date;
+//   summary: string | null;
+// }
 
 // ── Factory ─────────────────────────────────────────────────────
 // Each tool captures { userId, collectionId } via closure so the
@@ -76,7 +76,7 @@ export function createDocumentTools(ctx: ToolContext) {
         filter,
       }: {
         filter?: string;
-      }): Promise<DocumentInfo[]> => {
+      }): Promise<string> => {
         const { conditions, params } = buildDocumentFilter(
           filter,
           ctx.userId,
@@ -102,7 +102,18 @@ export function createDocumentTools(ctx: ToolContext) {
           ...params
         );
 
-        return rows;
+        if (rows.length === 0) {
+          return filter
+            ? `No documents found matching "${filter}".`
+            : "No documents found.";
+        }
+
+        // Return a compact text summary to stay within model message limits
+        const lines = rows.map(
+          (r) =>
+            `- ${r.filename} (${(r.fileSize / 1024).toFixed(1)} KB, ${r.chunkCount} chunks, uploaded ${new Date(r.uploadedAt).toLocaleDateString()})`
+        );
+        return `${rows.length} document(s) found:\n${lines.join("\n")}`;
       },
     },
 
@@ -121,7 +132,7 @@ export function createDocumentTools(ctx: ToolContext) {
         filter,
       }: {
         filter?: string;
-      }): Promise<{ count: number; filter: string | null }> => {
+      }): Promise<string> => {
         const { conditions, params } = buildDocumentFilter(
           filter,
           ctx.userId,
@@ -135,10 +146,10 @@ export function createDocumentTools(ctx: ToolContext) {
           ...params
         );
 
-        return {
-          count: Number(rows[0].count),
-          filter: filter ?? null,
-        };
+        const count = Number(rows[0].count);
+        return filter
+          ? `${count} document(s) match "${filter}".`
+          : `You have ${count} document(s) in total.`;
       },
     },
 

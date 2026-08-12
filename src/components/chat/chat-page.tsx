@@ -7,78 +7,53 @@ import { useChatStore } from "@/hooks/use-chat-store";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import type { UIMessage } from "ai";
 
-function InitialMessageSender({ initialMessage }: { initialMessage: string }) {
-  const aui = useAui();
-  const hasSent = useRef(false);
-
-  useEffect(() => {
-    if (hasSent.current) return;
-    if (aui.thread.source == null) return;
-
-    const state = aui.thread.getState();
-    const alreadyHasUserMessage = state.messages.some((m) => m.role === "user");
-    if (alreadyHasUserMessage) return;
-
-    hasSent.current = true;
-    aui.thread.append({
-      role: "user",
-      content: [{ type: "text", text: initialMessage }],
-    });
-    aui.thread.startRun({ parentId: null });
-  }, [aui, initialMessage]);
-
-  return null;
-}
-
 /**
- * Loads historical messages by appending them to the thread without parentId.
- * We avoid parentId because the AI SDK message store (managed by useChat) does
- * not have these historical IDs, and setting parentId triggers sliceMessagesUntil
- * which would fail. The thread displays messages in append order regardless.
+ * Loads historical messages into the thread on mount.
+ * Polls until the AI SDK runtime (useChat) is ready, then appends
+ * messages without triggering runs.
  */
-function HistoryLoader({ messages }: { messages: UIMessage[] }) {
+function ChatInitializer({ messages }: { messages: UIMessage[] }) {
   const aui = useAui();
-  const loaded = useRef(false);
+  const done = useRef(false);
 
   useEffect(() => {
-    if (loaded.current) return;
-    if (messages.length === 0) return;
+    if (done.current) return;
 
     let attempts = 0;
     const maxAttempts = 50;
 
-    const tryLoad = () => {
-      if (loaded.current) return;
+    const tryInit = () => {
+      if (done.current) return;
 
       if (aui.thread.source == null) {
         attempts++;
-        if (attempts < maxAttempts) setTimeout(tryLoad, 100);
+        if (attempts < maxAttempts) setTimeout(tryInit, 100);
         return;
       }
 
       const state = aui.thread.getState();
       if (state.messages.length > 0) {
-        loaded.current = true;
+        done.current = true;
         return;
       }
 
-      loaded.current = true;
+      done.current = true;
 
       for (const msg of messages) {
         aui.thread.append({
           role: msg.role as "user" | "assistant",
-          content: msg.parts ?? [],
+          content: (msg.parts ?? []) as any,
           startRun: false,
         });
       }
     };
 
-    tryLoad();
+    tryInit();
 
     return () => {
-      loaded.current = true;
+      done.current = true;
     };
-  }, [aui, messages]);
+  }, [messages]);
 
   return null;
 }
@@ -160,8 +135,7 @@ function ChatPageInner({
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <div className="h-full">
-        <HistoryLoader messages={historyMessages} />
-        {initialMessage && <InitialMessageSender initialMessage={initialMessage} />}
+        <ChatInitializer messages={historyMessages} />
         <Thread />
       </div>
     </AssistantRuntimeProvider>
