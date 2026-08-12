@@ -1,14 +1,15 @@
 import { deepseek } from "@ai-sdk/deepseek";
 import {
   convertToModelMessages,
-  createUIMessageStream,
   createUIMessageStreamResponse,
+  isStepCount,
   streamText,
   toUIMessageStream,
 } from "ai";
 import { auth } from "@/lib/auth-server";
 import { prisma } from "@/lib/db";
 import { retrieveContext } from "@/lib/retrieval";
+import { createDocumentTools } from "@/lib/document-tools";
 import type { MyUIMessage } from "@/types";
 import { Prisma } from "@prisma/client";
 import { headers } from "next/headers";
@@ -111,8 +112,19 @@ export async function POST(req: Request) {
     const systemMessage = `### Task:
 Respond to the user query using the provided context. When the context contains relevant information, cite sources using [N] format where N refers to the [Document N] marker in the context.
 
+### Available Tools:
+You have access to three tools for querying the document library directly:
+- **countDocuments** — Use when the user asks "how many documents about X?" or any counting question. Returns an exact count from the database. The filter matches filenames (case-insensitive).
+- **listDocuments** — Use when the user asks "what documents do I have?" or wants to browse/browse by topic. Returns full document metadata (name, size, chunk count, upload date, summary).
+- **getDocumentContent** — Use when the user asks to read or summarize a specific document. Pass the document ID from a previous listDocuments result. Returns all text chunks with page numbers.
+
+### When to use tools vs. provided context:
+- **Counting / listing questions** → ALWAYS use countDocuments or listDocuments. The <context> below only contains a small sample of chunks — it cannot give you a complete or accurate count. Never estimate counts from the context.
+- **Content questions** ("what does the guide say about X?") → Use the <context> first. Only fall back to getDocumentContent if the context is insufficient.
+- If both context and tools could answer, prefer tools for factual accuracy.
+
 ### Citation Rules:
-- Cite factual claims that are supported by the context: "The sky is blue. [1]"
+- Cite factual claims supported by the context: "The sky is blue. [1]"
 - Place punctuation BEFORE the citation: "This is correct. [1]"
 - Multiple sources for one claim: "This is well-documented. [1], [3]"
 - If the context says "No relevant information found", answer from general knowledge but clearly state that the documents don't contain relevant information. Do NOT fabricate citations.
@@ -127,66 +139,47 @@ Respond to the user query using the provided context. When the context contains 
 ${context}
 </context>`;
 
-    const stream = createUIMessageStream<MyUIMessage>({
-      execute: async ({ writer }) => {
-        // Stream sources as first-class data parts
-        if (sources.length > 0) {
-          writer.write({
-            type: "data-sources",
-            id: "sources",
-            data: { sources },
-          });
-        } else {
-          // Stream notification
-          writer.write({
-            type: "data-notification",
+    const result = streamText({
+      model: deepseek("deepseek-chat"),
+      system: systemMessage,
+      messages: await convertToModelMessages(messages),
+      tools: createDocumentTools({
+        userId: session.user.id,
+        collectionId: activeCollectionId ?? undefined,
+      }),
+      stopWhen: isStepCount(10),
+      temperature: 0.5,
+      onEnd: async ({ text }) => {
+        // Save assistant message with sources
+        if (text && text.length > 0) {
+          await prisma.message.create({
             data: {
-              message:
-                "No relevant documents found. Answering from general knowledge.",
-              level: "warning",
+              chatId: activeChatId,
+              role: "assistant",
+              content: text,
+              sources:
+                sources.length > 0
+                  ? (sources as unknown as Prisma.InputJsonValue)
+                  : undefined,
             },
-            transient: true,
           });
         }
 
-        const result = streamText({
-          model: deepseek("deepseek-chat"),
-          system: systemMessage,
-          messages: await convertToModelMessages(messages),
-          temperature: 0.5,
-          onEnd: async ({ text }) => {
-            // Save assistant message with sources
-            await prisma.message.create({
-              data: {
-                chatId: activeChatId,
-                role: "assistant",
-                content: text,
-                sources:
-                  sources.length > 0
-                    ? (sources as unknown as Prisma.InputJsonValue)
-                    : undefined,
-              },
-            });
-
-            // Auto-title if "New Chat"
-            const chat = await prisma.chat.findUnique({
-              where: { id: activeChatId },
-            });
-            if (chat && chat.title === "New Chat") {
-              await prisma.chat.update({
-                where: { id: activeChatId },
-                data: { title: latestMessage.substring(0, 50) },
-              });
-            }
-          },
+        // Auto-title if "New Chat"
+        const chat = await prisma.chat.findUnique({
+          where: { id: activeChatId },
         });
-
-        writer.merge(toUIMessageStream({ stream: result.stream }));
+        if (chat && chat.title === "New Chat") {
+          await prisma.chat.update({
+            where: { id: activeChatId },
+            data: { title: latestMessage.substring(0, 50) },
+          });
+        }
       },
     });
 
     return createUIMessageStreamResponse({
-      stream,
+      stream: toUIMessageStream({ stream: result.stream }),
       headers: { "X-Chat-Id": activeChatId },
     });
   } catch (error) {
