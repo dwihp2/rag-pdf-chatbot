@@ -15,9 +15,9 @@ function LandingPage() {
       <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center mb-6">
         <MessageSquare className="h-6 w-6 text-primary-foreground" />
       </div>
-      <h1 className="text-4xl font-bold mb-3 text-center">RAG Chat</h1>
+      <h1 className="text-4xl font-bold mb-3 text-center">DeptQ</h1>
       <p className="text-lg text-muted-foreground mb-8 text-center max-w-md">
-        Upload PDFs, ask questions, get cited answers. Your documents, made conversational.
+        Q&A for every department. Upload PDFs, ask questions, get cited answers.
       </p>
       <div className="flex gap-3">
         <Link href="/login">

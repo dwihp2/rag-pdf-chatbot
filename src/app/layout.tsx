@@ -5,8 +5,8 @@ import { Toaster } from "@/components/ui/sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "RAG PDF Chatbot",
-  description: "AI-powered document chat with RAG capabilities",
+  title: "DeptQ — Q&A for Every Department",
+  description: "DeptQ (Dept + Q): a RAG-powered PDF chatbot with a cited knowledge base for every department.",
 };
 
 export default function RootLayout({

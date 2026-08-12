@@ -1,18 +1,16 @@
-# RAG PDF Chatbot
+# DeptQ
 
-A powerful PDF document analysis chatbot built with Next.js, featuring Retrieval-Augmented Generation (RAG) capabilities and persistent chat history. This application allows users to upload PDF documents, extract their content, and engage in intelligent conversations with the documents using AI.
+**DeptQ** — *Dept* (department) + *Q* (question): **Q&A for every department.** A RAG-powered PDF chatbot: upload PDFs, organize them into collections — a separate knowledge base per team or department — and chat with them in natural language, with cited answers and persistent history. Built with Next.js 15, assistant-ui, AI SDK v7, DeepSeek, Gemini embeddings, and pgvector.
 
 ## 🎯 What is This Project?
 
-This is a **Document Intelligence Chatbot** that transforms how you interact with PDF documents. Instead of manually searching through long documents, you can:
+**DeptQ** is a document-intelligence app that turns PDF documents into a searchable, conversational knowledge base:
 
-- Upload multiple PDF files to create a knowledge base
-- Ask questions about the content in natural language
-- Get accurate answers with source citations
-- Maintain conversation history across multiple sessions
-- View exactly which parts of your documents were referenced
-
-Perfect for researchers, students, professionals, and anyone who needs to quickly extract information from large documents.
+- Upload PDFs and have their text extracted page-by-page and chunked
+- Embed chunks with Google Gemini (`gemini-embedding-001`, 3072-dim) and index them in PostgreSQL with pgvector
+- Organize documents into **collections** — one knowledge base per team or department; chats scoped to a collection search only that collection's documents (or chat across all of them)
+- Ask questions and get streamed answers with `[N]` inline citations plus a sources panel (filename, page, snippet, relevance score)
+- Keep persistent chat history per user, with a full-page chat view and a floating chat widget
 
 ## 📸 Screenshots
 
@@ -33,412 +31,344 @@ Perfect for researchers, students, professionals, and anyone who needs to quickl
 
 ## ✨ Key Features
 
-- 🏠 **Intuitive Home Interface**: Clean, welcoming home page with easy navigation to all features
-- 📚 **Knowledge Management System**: Centralized dashboard to manage your PDF document library
-- 📄 **Smart PDF Upload & Processing**: Drag-and-drop interface with intelligent text extraction and chunking
-- 💬 **Conversational Chat Interface**: Natural language conversations with your document collection
-- 🔍 **Semantic Vector Search**: Advanced search through document content using pgvector in PostgreSQL
-- � **Document Source Attribution**: Clear citations showing exactly which document sections informed each response
-- 🤖 **AI-Powered Responses**: Accurate answers using Claude 3 Haiku with document context
-- 💾 **Persistent Chat History**: PostgreSQL database for storing chat sessions and conversation history
-- 🎨 **Modern, Responsive UI**: Clean interface built with Tailwind CSS and Radix UI components
-- 🔄 **Real-time Processing**: Live document processing and streaming chat responses
+- 🔐 **Email & Password Auth** — better-auth with 30-day sessions; dashboard and API routes protected by middleware
+- 📄 **PDF Upload & Processing** — drag-and-drop upload, per-page text extraction via `pdf-parse`, chunking (~1000 chars, 200 overlap)
+- 🗂️ **Collections as Departmental Knowledge Bases** — a separate collection per team (HR, Sales, Legal, Engineering…); each has its own documents, and chats scoped to it search only within that collection
+- 💬 **RAG Chat** — DeepSeek (`deepseek-chat`) answers streamed via AI SDK v7 with semantic retrieval from pgvector
+- 🔍 **Semantic Vector Search** — Gemini `gemini-embedding-001` embeddings (3072-dim) with cosine similarity search
+- 📎 **Source Attribution** — `[N]` inline citations plus a sources panel with filename, page, snippet, and score
+- 🧰 **Tool Calling** — `countDocuments`, `listDocuments`, and `getDocumentContent` tools for exact library queries
+- 💾 **Persistent Chat History** — chats and messages stored in PostgreSQL via Prisma
+- 🪟 **Dual Chat Surfaces** — full-page chat and a floating widget (assistant-ui), synced via Zustand
+- 🎨 **Modern UI** — Tailwind CSS 4, shadcn/ui (Radix), lucide icons, streaming responses
+
+## 🏢 Use Case: One Knowledge Base per Department
+
+Collections were designed for organizations that need to keep knowledge separate. In a small business, create one collection per department:
+
+| Collection | Example documents | Chats answer |
+| ---------- | ----------------- | ------------ |
+| HR | Employee handbook, policies, benefits guides | HR questions only |
+| Sales | Price lists, playbooks, battle cards | Sales questions only |
+| Legal | Contracts, compliance documents, NDAs | Legal questions only |
+| Engineering | Specs, postmortems, runbooks | Engineering questions only |
+
+- A chat started from a collection searches **only** that collection's documents — no cross-department leakage.
+- A chat started from the home page searches all of your documents, for company-wide questions.
+- Every answer still comes with page-level `[N]` citations, so responses stay auditable.
+
+```mermaid
+flowchart LR
+    subgraph Org[Company workspace]
+      HR[HR Collection] --- D1[Handbook, policies]
+      Sales[Sales Collection] --- D2[Playbooks, pricing]
+      Legal[Legal Collection] --- D3[Contracts, NDAs]
+    end
+    Q1[HR question] --> HR
+    Q2[Sales question] --> Sales
+    Q3[Legal question] --> Legal
+```
 
 ## 🛠️ Technology Stack
 
-- **Frontend**: Next.js 15, React 19, TypeScript
-- **AI/ML**: 
-  - Claude 3 Haiku (Anthropic) for chat responses
-  - OpenAI text-embedding-3-small for document embeddings via Vercel AI SDK
-  - LangChain for document processing and chunking
-- **Database**: PostgreSQL with Prisma ORM
-- **Vector Database**: pgvector extension for PostgreSQL for semantic search and document retrieval
-- **UI**: Tailwind CSS, Radix UI components, Lucide icons
-- **File Processing**: PDF parsing with pdf-parse library
-- **Deployment**: Vercel-ready with optimized build configuration
+| Layer | Technology |
+| ----- | ---------- |
+| Framework | Next.js 15 (App Router), React 19, TypeScript |
+| Chat UI | assistant-ui (`@assistant-ui/react`), AI SDK v7 (`@ai-sdk/react`) |
+| LLM | DeepSeek `deepseek-chat` via `@ai-sdk/deepseek` |
+| Embeddings | Google Gemini `gemini-embedding-001` (3072-dim) via `@ai-sdk/google` |
+| Database | PostgreSQL 13+ with pgvector, Prisma 6 ORM |
+| Auth | better-auth (email & password, DB sessions) |
+| PDF Parsing | `pdf-parse` (per-page text extraction) |
+| UI | Tailwind CSS 4, shadcn/ui (Radix), lucide-react, sonner |
+| State | Zustand (cross-surface chat store) |
+| Deployment | Vercel-ready (`vercel.json` build command) |
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-Before you begin, ensure you have the following installed:
+- **Node.js 18.18+** (Next.js 15 requirement)
+- **npm** (or another package manager)
+- **PostgreSQL 13+ with the pgvector extension** (local or cloud)
+- API keys for **DeepSeek** (chat) and **Google Gemini** (embeddings)
 
-- **Node.js 18+** (Latest LTS recommended)
-- **npm** or **yarn** package manager
-- **PostgreSQL** database with pgvector extension (local or cloud)
+### Quick Start
 
-### Quick Start Guide
+#### 1. Install dependencies
 
-#### 1. Clone the Repository
-```bash
-git clone https://github.com/yourusername/rag-pdf-chatbot.git
-cd rag-pdf-chatbot
-```
-
-#### 2. Install Dependencies
 ```bash
 npm install
-# or
-yarn install
 ```
 
-#### 3. Set up Environment Variables
-Create a `.env.local` file in the root directory with the following variables:
+> `postinstall` automatically runs `prisma generate`.
+
+#### 2. Configure environment variables
 
 ```bash
-# Database Configuration
-DATABASE_URL="postgresql://username:password@localhost:5432/ragchatbot"
-DIRECT_URL="postgresql://username:password@localhost:5432/ragchatbot"
-
-# AI Service API Keys
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
-OPENAI_API_KEY=your_openai_api_key_for_embeddings
-
-# Neon Database Configuration (if using Neon)
-NEON_DATABASE_URL=your_neon_database_url
-NEON_DIRECT_URL=your_neon_direct_url
-NEON_DATABASE_URL_UNPOOLED=your_neon_unpooled_url
-
-# Neon Stack Auth (optional)
-NEXT_PUBLIC_NEON_STACK_PROJECT_ID=your_project_id
-NEXT_PUBLIC_NEON_STACK_PUBLISHABLE_CLIENT_KEY=your_publishable_key
-NEON_STACK_SECRET_SERVER_KEY=your_secret_key
+cp .env.example .env
 ```
 
-#### 4. Database Setup
+| Variable | Description |
+| -------- | ----------- |
+| `DATABASE_URL` | PostgreSQL connection string (Prisma; pooled ok) |
+| `DIRECT_URL` | Direct (non-pooled) connection string, used for migrations |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Google Gemini API key for `gemini-embedding-001` embeddings |
+| `DEEPSEEK_API_KEY` | DeepSeek API key for `deepseek-chat` responses |
+| `BETTER_AUTH_SECRET` | Secret for signing auth sessions (any long random string) |
+
+#### 3. Set up the database
+
 ```bash
-# Generate Prisma client
-npx prisma generate
-
-# Apply database migrations
-npx prisma db push
-
-# (Optional) Open Prisma Studio to view your database
-npx prisma studio
+npx prisma migrate dev
 ```
 
-#### 5. Run the Development Server
+The migration creates the `vector` extension and all tables.
+
+#### 4. Start the dev server
+
 ```bash
 npm run dev
-# or
-yarn dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
+Open [http://localhost:3000](http://localhost:3000), create an account, and upload a PDF.
 
 ## 📋 Detailed Setup Instructions
 
 ### Getting API Keys
 
-1. **Anthropic API Key**:
-   - Visit [Anthropic Console](https://console.anthropic.com/)
-   - Create an account and generate an API key
-   - Add credits to your account
+1. **DeepSeek API key**:
+   - Visit [platform.deepseek.com](https://platform.deepseek.com/) and create an API key
+   - Set `DEEPSEEK_API_KEY` in `.env`
 
-2. **OpenAI API Key** (for embeddings):
-   - Visit [OpenAI Platform](https://platform.openai.com/)
-   - Create an account and generate an API key
-   - Add credits to your account for embedding usage
+2. **Google Gemini API key** (for embeddings):
+   - Visit [Google AI Studio](https://aistudio.google.com/) and create an API key
+   - Set `GOOGLE_GENERATIVE_AI_API_KEY` in `.env`
 
 ### Database Configuration
 
-#### Option 1: Local PostgreSQL
+#### Option 1: Local PostgreSQL with pgvector
+
 ```bash
-# Install PostgreSQL (macOS)
-brew install postgresql
-brew services start postgresql
-
-# Create database
-createdb ragchatbot
-
-# Update DATABASE_URL in .env.local
-DATABASE_URL="postgresql://your_username@localhost:5432/ragchatbot"
+# macOS
+brew install postgresql@17 pgvector
+brew services start postgresql@17
+createdb deptq
 ```
 
-#### Option 2: Cloud PostgreSQL (Recommended)
-- **Neon**: Serverless PostgreSQL with generous free tier
-- **Vercel Postgres**: Easy integration with Vercel deployment
-- **Supabase**: Free tier with 500MB storage
-- **PlanetScale**: MySQL-compatible option
-- **Railway**: Simple PostgreSQL hosting
+Then point `.env` at it:
 
-#### Option 3: Neon Database Setup (Recommended for Serverless)
-Neon includes built-in support for the pgvector extension, making it perfect for this application.
+```bash
+DATABASE_URL="postgresql://<your-username>@localhost:5432/deptq"
+DIRECT_URL="postgresql://<your-username>@localhost:5432/deptq"
+```
 
-1. **Create a Neon account**: Visit [Neon Console](https://console.neon.tech/)
-2. **Create a new project** and database
-3. **Enable pgvector extension**: This is available by default in Neon
-4. **Get your connection strings** from the Neon dashboard
-5. **Configure environment variables**:
-   ```bash
-   # Primary database URLs (used by Prisma)
-   DATABASE_URL="your_neon_pooled_connection_string"
-   DIRECT_URL="your_neon_direct_connection_string"
-   
-   # Additional Neon-specific variables
-   NEON_DATABASE_URL="your_neon_pooled_connection_string"
-   NEON_DIRECT_URL="your_neon_direct_connection_string"
-   NEON_DATABASE_URL_UNPOOLED="your_neon_unpooled_connection_string"
-   ```
+`npx prisma migrate dev` creates the `vector` extension automatically.
+
+#### Option 2: Cloud PostgreSQL (recommended for deployment)
+
+**Neon** (free tier, pgvector built in):
+
+1. Create a project at [console.neon.tech](https://console.neon.tech/)
+2. Copy the pooled connection string into `DATABASE_URL`
+3. Copy the direct/unpooled connection string into `DIRECT_URL`
+4. Run `npx prisma migrate dev`
+
+Other options that support pgvector: Vercel Postgres, Supabase, RDS, or any PostgreSQL 13+ server with the extension installed.
 
 ## 📖 How to Use
 
-### 1. Start from the Home Page
-Begin your journey on the clean, intuitive home page that provides an overview of the application's capabilities and easy navigation to key features.
-
-### 2. Manage Your Knowledge Base
-Use the **Knowledge Management** interface to:
-- View all uploaded documents
-- Organize your PDF collection
-- Monitor document processing status
-- Remove documents when no longer needed
-
-### 3. Upload PDF Documents
-1. Navigate to the **PDF Upload** interface
-2. Drag and drop PDF files or click to select files
-3. Wait for the processing to complete (documents are chunked and embedded)
-4. Your documents will be added to your knowledge base automatically
-
-### 4. Start Intelligent Conversations
-1. Access the **Chat Interface** to begin conversations
-2. Ask questions about your uploaded documents in natural language
-3. Receive AI-powered responses with contextual understanding
-4. View **document sources** that show exactly which parts of your PDFs were referenced
-
-### 5. Leverage Document Sources
-- **Source Citations**: See which specific document sections informed each response
-- **Reference Verification**: Click on sources to understand the context
-- **Multi-Document Insights**: Get answers that synthesize information across multiple PDFs
-- **Accurate Attribution**: Trust responses with clear source references
-
-### 6. Maintain Conversation Flow
-- **Contextual Follow-ups**: Ask related questions in the same conversation
-- **Chat History**: Access previous conversations and continue where you left off
-- **Session Management**: Create new chats for different topics or document sets
+1. **Create an account** — register at `/register`, then sign in at `/login`.
+2. **Upload PDFs** — on the Documents page, drag and drop PDFs. They are extracted page-by-page, chunked, embedded, and indexed automatically.
+3. **Create collections** — on the Collections page, create a collection per team or department (e.g. HR, Sales, Legal) and add the relevant documents to each.
+4. **Chat with your documents**:
+   - Use the full-page chat (home page or `/chat/[id]`) for an in-depth conversation.
+   - Use the floating chat widget (bottom-right) from anywhere in the dashboard — both share the same thread list.
+   - Type a question in a collection's "Ask this collection" box to start a chat scoped to that collection; a chat started from the home page searches all of your documents.
+5. **Read the sources** — every answer shows `[N]` citations; the sources panel lists the filename, page, snippet, and relevance score for each cited chunk.
+6. **Pick up where you left off** — chat history is persisted, and previous conversations can be reopened from the sidebar thread list.
 
 ## 🔧 Database Management
 
-The application uses PostgreSQL with Prisma ORM for data persistence. For Neon-specific configurations, see [NEON_CONFIGURATION.md](NEON_CONFIGURATION.md).
-
-Available database commands:
+The application uses PostgreSQL with Prisma ORM and pgvector for data persistence.
 
 ```bash
-# Generate Prisma client after schema changes
-npm run db:generate
-
-# Apply database changes
-npm run db:push
-
-# View and edit data in Prisma Studio
-npm run db:studio
-
-# Reset database (⚠️ This will delete all data)
-npm run db:reset
+npm run db:generate # Generate Prisma client after schema changes
+npm run db:push     # Push schema changes directly to the database
+npm run db:studio   # Browse and edit data in Prisma Studio
+npm run db:reset    # Force-reset the database (⚠️ deletes all data)
 ```
 
 ## 📚 Available Scripts
 
 ```bash
-# Development
-npm run dev          # Start development server with Turbo
-npm run build        # Build for production
-npm run start        # Start production server
+npm run dev          # Start the dev server (Next.js + Turbopack)
+npm run build        # Generate Prisma client + production build
+npm run start        # Start the production server
 npm run lint         # Run ESLint
-
-# Database operations
 npm run db:generate  # Generate Prisma client
-npm run db:push      # Push schema changes to database
+npm run db:push      # Push schema changes to the database
 npm run db:studio    # Open Prisma Studio
-npm run db:reset     # Reset database
+npm run db:reset     # Force-reset the database
 ```
 
-## 🌐 API Documentation
+## 🌐 API Endpoints
 
-### Chat Management Endpoints
-- `GET /api/chats` - Retrieve all chat sessions
-- `POST /api/chats` - Create a new chat session
-- `GET /api/chats/[id]` - Get specific chat with all messages
-- `PUT /api/chats/[id]` - Update chat title
-- `DELETE /api/chats/[id]` - Delete chat and all messages
+All endpoints except `/api/auth/*` require a valid session cookie.
 
-### Document Processing Endpoints
-- `POST /api/upload` - Upload and process PDF documents
-- `POST /api/chat` - Send message and receive AI response
+### Auth
+- `GET|POST /api/auth/[...all]` — better-auth handler
 
-### Vector Database Endpoints
-- `GET /api/vectors` - Get vector database statistics  
-- `POST /api/vectors` - Search vectors by query
-- `DELETE /api/vectors` - Delete vectors (clear all or by document ID)
+### Chat
+- `GET /api/chat?chatId=...` — get chat messages
+- `POST /api/chat` — send a message; streams the AI response (returns `X-Chat-Id`)
+- `GET|POST /api/chats` — list / create chats
+- `GET|PUT|DELETE /api/chats/[id]` — get / update / delete a chat
+
+### Documents
+- `GET|POST /api/documents` — list / create documents
+- `DELETE /api/documents/[id]` — delete a document and its chunks
+- `POST /api/upload` — upload and process PDF documents
+
+### Collections
+- `GET|POST /api/collections` — list / create collections
+- `GET|PUT|DELETE /api/collections/[id]` — get / update / delete a collection
+- `POST /api/collections/[id]/documents` — add documents to a collection
+- `DELETE /api/collections/[id]/documents/[documentId]` — remove a document from a collection
 
 ## 📁 Project Structure
 
 ```
 rag-pdf-chatbot/
 ├── prisma/
-│   └── schema.prisma          # Database schema
-├── public/
-│   ├── *.png                  # Screenshot images
-│   └── *.svg                  # Icon assets
+│   ├── schema.prisma                  # Prisma schema (pgvector extension)
+│   └── migrations/                    # SQL migrations
 ├── src/
 │   ├── app/
-│   │   ├── api/               # API routes
-│   │   │   ├── chat/          # Chat API endpoint
-│   │   │   ├── chats/         # Chat management
-│   │   │   ├── qdrant/        # Vector search
-│   │   │   └── upload/        # PDF upload
-│   │   ├── chats/[id]/        # Dynamic chat pages
-│   │   ├── globals.css        # Global styles
-│   │   ├── layout.tsx         # Root layout
-│   │   └── page.tsx           # Main page
+│   │   ├── page.tsx                   # Landing page / chat home (authenticated)
+│   │   ├── (auth)/
+│   │   │   ├── login/page.tsx
+│   │   │   └── register/page.tsx
+│   │   ├── (dashboard)/
+│   │   │   ├── layout.tsx             # Auth guard + sidebar + floating chat
+│   │   │   ├── chat/[id]/page.tsx     # Full-page chat
+│   │   │   ├── collections/page.tsx
+│   │   │   ├── collections/[id]/page.tsx
+│   │   │   └── documents/page.tsx     # Upload + document list
+│   │   └── api/
+│   │       ├── auth/[...all]/route.ts # better-auth handler
+│   │       ├── chat/route.ts          # RAG chat (streaming)
+│   │       ├── chats/                 # Chat CRUD
+│   │       ├── documents/             # Document CRUD
+│   │       ├── collections/           # Collection CRUD
+│   │       └── upload/route.ts        # PDF upload
 │   ├── components/
-│   │   ├── ui/                # Reusable UI components
-│   │   ├── chat-interface.tsx # Main chat component
-│   │   ├── chat-sidebar.tsx   # Chat history sidebar
-│   │   └── pdf-upload.tsx     # PDF upload component
-│   └── lib/
-│       ├── database.ts        # Database operations
-│       ├── document-processor.ts # PDF processing
-│       ├── neon-config.ts     # Neon database configuration
-│       ├── qdrant.ts          # Vector database client
-│       └── utils.ts           # Utility functions
-├── .env.local                 # Environment variables
-├── package.json               # Dependencies and scripts
-└── README.md                  # Project documentation
+│   │   ├── assistant-ui/              # Thread, thread list, markdown, tool UI
+│   │   ├── auth/                      # Auth guard, interceptor, login form
+│   │   ├── chat/                      # Chat home, chat page, floating widget
+│   │   ├── collections/               # Collection cards
+│   │   ├── documents/                 # Upload zone, document list
+│   │   ├── layout/                    # App sidebar
+│   │   └── ui/                        # shadcn/ui components
+│   ├── hooks/use-chat-store.ts        # Zustand hook
+│   ├── lib/
+│   │   ├── auth.ts                    # better-auth client
+│   │   ├── auth-server.ts             # better-auth server config
+│   │   ├── db.ts                      # Prisma client singleton
+│   │   ├── document-processor.ts      # PDF parsing + chunking
+│   │   ├── document-tools.ts          # AI tools (count/list/get content)
+│   │   ├── retrieval.ts               # Vector search + context formatting
+│   │   └── vector-service.ts          # pgvector operations
+│   ├── store/chat-store.ts            # Zustand store (thread sync)
+│   └── types/index.ts                 # Shared types
+├── middleware.ts                       # Route protection
+├── vercel.json                         # Vercel build config
+└── package.json
 ```
 
 ## 🔍 How It Works
 
-### 1. User Journey Flow
+### Document processing
+
 ```
-Home Page → Knowledge Management → PDF Upload → Document Processing → Chat Interface → AI Response with Sources
+PDF upload → per-page text extraction (pdf-parse) → chunking (~1000 chars, 200 overlap)
+→ Gemini embedding (gemini-embedding-001, 3072-dim) → pgvector storage (DocumentChunk)
 ```
 
-### 2. Document Processing Pipeline
+### Chat and retrieval
+
 ```
-PDF Upload Interface → Text Extraction → Text Chunking → Vector Embedding → pgvector Storage → Knowledge Management Dashboard
+Question → Gemini query embedding → pgvector cosine similarity search (top 8, score ≥ 0.35)
+→ DeepSeek deepseek-chat with retrieved context + document tools → streamed reply with [N] citations
 ```
 
-### 3. Chat & Retrieval Flow
-```
-User Question → Vector Search → Context Retrieval → AI Processing → Response Generation → Source Attribution Display
-```
-
-### 4. Complete Data Flow
-- **Home Interface** provides intuitive navigation to all features
-- **Knowledge Management** displays and organizes your document library
-- **PDF Upload** processes documents using `pdf-parse` for text extraction
-- **Text Chunking** creates semantic segments using LangChain's text splitters
-- **Vector Embeddings** are generated using OpenAI's text-embedding-3-small model via Vercel AI SDK and stored in PostgreSQL with pgvector
-- **Chat Interface** enables natural language conversations with your documents
-- **Vector Search** retrieves relevant document chunks using pgvector's cosine similarity search
-- **AI Processing** uses Claude 3 Haiku to generate contextual responses
-- **Source Attribution** shows exactly which document sections informed each response
-- **Chat History** is persisted in PostgreSQL with full conversation context
+- Chats scoped to a collection restrict retrieval to that collection's documents; global chats search all completed documents.
+- The model can call `countDocuments`, `listDocuments`, and `getDocumentContent` for exact library queries.
+- Responses and sources are persisted to `Message` rows when the stream completes.
 
 ## 🚀 Deployment
 
-### Deploy to Vercel (Recommended)
+### Deploy to Vercel
 
-1. **Fork this repository** to your GitHub account
-
-2. **Set up databases**:
-   - Create a PostgreSQL database (Vercel Postgres, Supabase, etc.)
-   - Set up Qdrant Cloud instance
-
-3. **Deploy to Vercel**:
+1. Push this repository to GitHub and import it in Vercel.
+2. Configure the environment variables in the Vercel project (see the table above):
+   - `DATABASE_URL` (pooled) and `DIRECT_URL` (direct) — e.g. from Neon
+   - `GOOGLE_GENERATIVE_AI_API_KEY`, `DEEPSEEK_API_KEY`, `BETTER_AUTH_SECRET`
+3. Run migrations against the production database:
    ```bash
-   npm install -g vercel
-   vercel --prod
+   npx prisma migrate deploy
    ```
+4. Deploy — `vercel.json` already sets the build command to `npx prisma generate && next build`.
 
-4. **Environment Variables**:
-   - `DATABASE_URL` and `DIRECT_URL`
-   - `ANTHROPIC_API_KEY`
-   - `OPENAI_API_KEY`
-   - `NEON_DATABASE_URL` (if using Neon)
-   - `NEON_DIRECT_URL` (if using Neon)
-   - Additional Neon variables as needed
+### Other Platforms
 
-5. **Run database migrations**:
-   ```bash
-   npx prisma db push
-   ```
-
-### Deploy to Other Platforms
-
-The application is compatible with:
-- **Netlify**
-- **Railway**
-- **Render**
-- **DigitalOcean App Platform**
+Any Node.js host that supports Next.js works (Railway, Render, Fly.io, Docker), as long as PostgreSQL with pgvector is reachable.
 
 ## 🔧 Customization
 
-### Adding New AI Models
-Modify `src/lib/chat.ts` to integrate different AI providers:
-- OpenAI GPT models
-- Google Gemini
-- Mistral AI
-- Local models via Ollama
+### Changing the chat model
+Edit `src/app/api/chat/route.ts` — swap `deepseek("deepseek-chat")` for another AI SDK provider (e.g. `openai` or `google`).
 
-### Custom Document Types
-Extend `src/lib/document-processor.ts` to support:
-- Word documents (.docx)
-- PowerPoint presentations (.pptx)
-- Text files (.txt, .md)
-- Web pages (HTML)
+### Changing the embedding model
+Edit `src/lib/vector-service.ts` — the embedding model is defined at the top of the file (`EMBEDDING_MODEL`). Changing the dimension also requires updating `embedding Unsupported("vector(3072)")` in `prisma/schema.prisma`.
 
-### UI Customization
-- Modify `src/app/globals.css` for custom styling
-- Update `components/ui/` for component changes
-- Configure `tailwind.config.js` for theme customization
+### Supporting more file types
+Extend `src/lib/document-processor.ts` (currently PDF-only via `pdf-parse`).
+
+### UI customization
+- Tailwind v4 theme is configured in CSS — see `src/app/globals.css`
+- shadcn/ui components live in `src/components/ui/`
 
 ## 🐛 Troubleshooting
 
 ### Common Issues
 
-1. **Database Connection Error**
-   ```bash
-   # Check your DATABASE_URL format
-   # For PostgreSQL: postgresql://username:password@host:port/database
-   ```
-
-2. **pgvector Extension Error**
-   ```bash
-   # Ensure pgvector extension is enabled in your PostgreSQL database
-   # For Neon, this is available by default
-   # For local PostgreSQL: CREATE EXTENSION vector;
-   ```
-
-3. **API Key Issues**
-   ```bash
-   # Check .env.local file exists and has correct keys
-   # Verify API keys are valid and have sufficient credits
-   ```
-
-4. **PDF Processing Errors**
-   ```bash
-   # Ensure PDF files are not corrupted
-   # Check file size limits (default: 10MB)
-   ```
-
-### Performance Optimization
-
-- **Database**: Use connection pooling for production
-- **Vector Search**: Optimize chunk size and overlap
-- **API Responses**: Implement response caching
-- **File Upload**: Add progress indicators and validation
+1. **`Can't reach database server`** — check `DATABASE_URL`/`DIRECT_URL` and that PostgreSQL is running.
+2. **`type "vector" does not exist`** — install/enable pgvector (`CREATE EXTENSION vector;`) and re-run `npx prisma migrate dev`.
+3. **`401 Unauthorized`** — the better-auth session is missing; sign in again or clear the `better-auth.session_token` cookie.
+4. **Chat responds without citations** — no chunks passed the similarity threshold; try a more specific question or check the document finished processing (`status: completed`).
+5. **Embedding errors** — verify `GOOGLE_GENERATIVE_AI_API_KEY` and that `gemini-embedding-001` is enabled for the key.
+6. **Prisma client mismatch** — run `npx prisma generate`.
 
 ## 📈 Roadmap
 
-- [ ] **Multi-user Support**: User authentication and authorization
-- [ ] **Advanced Analytics**: Usage statistics and insights
-- [ ] **API Rate Limiting**: Prevent abuse and manage costs
-- [ ] **Real-time Collaboration**: Shared chat sessions
-- [ ] **Mobile App**: React Native companion app
-- [ ] **Bulk Document Processing**: Handle large document sets
-- [ ] **Advanced Search**: Filtering and sorting capabilities
-- [ ] **Export Features**: PDF/Word report generation
+**Current phase** — team collaboration MVP (plan: `docs/superpowers/plans/2026-08-12-deptq-team-collab-mvp.md`):
+
+- [ ] **Collection Sharing** — invite links, owner/member roles, member management, Owner/Member badges
+- [ ] **Hardening** — 20 MB upload cap, per-user rate limits on chat and upload
+
+**Planned next**:
+
+- [ ] **More File Types** — Markdown, TXT, DOCX support
+- [ ] **Organization Workspace** — org-level users, admin role, shared department document libraries
+- [ ] **Shared Chat History** — department-wide conversation threads
+
+**Later**:
+
+- [ ] **Advanced Analytics** — usage statistics and insights
+- [ ] **Bulk Document Processing** — handle large document sets
+- [ ] **Advanced Search** — filtering and sorting capabilities
+- [ ] **Email Invites & Redis Rate Limits** — as the pilot scales past one instance
 
 ## 🤝 Contributing
 
@@ -479,7 +409,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 ```
 MIT License
 
-Copyright (c) 2024 RAG PDF Chatbot
+Copyright (c) 2026 DeptQ
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -494,13 +424,14 @@ copies or substantial portions of the Software.
 
 ## 🙏 Acknowledgments
 
-- **[Anthropic](https://www.anthropic.com/)** for Claude AI
-- **[OpenAI](https://openai.com/)** for text embedding models
-- **[Vercel](https://vercel.com/)** for AI SDK and deployment platform
-- **[Prisma](https://prisma.io/)** for database ORM
-- **[pgvector](https://github.com/pgvector/pgvector)** for PostgreSQL vector extension
+- **[DeepSeek](https://www.deepseek.com/)** for the chat model
+- **[Google](https://ai.google.dev/)** for Gemini embedding models
+- **[Vercel](https://vercel.com/)** for the AI SDK and deployment platform
+- **[assistant-ui](https://www.assistant-ui.com/)** for chat UI primitives
+- **[better-auth](https://www.better-auth.com/)** for authentication
+- **[Prisma](https://prisma.io/)** for the database ORM
+- **[pgvector](https://github.com/pgvector/pgvector)** for the PostgreSQL vector extension
 - **[Neon](https://neon.tech/)** for serverless PostgreSQL with pgvector support
-- **[LangChain](https://langchain.com/)** for document processing
 - **[Radix UI](https://www.radix-ui.com/)** for UI components
 
 ## 📞 Support

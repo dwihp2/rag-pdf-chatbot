@@ -24,7 +24,7 @@ export function AppSidebar() {
           <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
             <MessageSquare className="h-4 w-4 text-primary-foreground" />
           </div>
-          <span className="font-semibold">RAG Chat</span>
+          <span className="font-semibold">DeptQ</span>
         </div>
 
         <Link href="/" className="block mb-4">
