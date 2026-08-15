@@ -42,7 +42,7 @@ function ChatInitializer({ messages }: { messages: UIMessage[] }) {
       for (const msg of messages) {
         aui.thread.append({
           role: msg.role as "user" | "assistant",
-          content: (msg.parts ?? []) as any,
+          content: (msg.parts ?? []) as never,
           startRun: false,
         });
       }
@@ -108,7 +108,6 @@ export function ChatPage({
 
 function ChatPageInner({
   chatId,
-  initialMessage,
   historyMessages,
 }: {
   chatId: string;
