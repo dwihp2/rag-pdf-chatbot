@@ -1,4 +1,4 @@
-# SDD ledger — plan: docs/superpowers/plans/2026-08-10-rag-chatbot-v2-rewrite.md
+# SDD ledger — plan: .scratch/rag-chatbot-v2-rewrite/spec.md (moved from docs/superpowers/plans/2026-08-10-rag-chatbot-v2-rewrite.md)
 
 ## Workspace: .superpowers/sdd/2026-08-10-rag-chatbot-v2-rewrite/
 

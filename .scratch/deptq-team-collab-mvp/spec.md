@@ -1,10 +1,13 @@
-# DeptQ v3 — Team Collaboration MVP Implementation Plan
+# Spec: DeptQ v3 — Team Collaboration MVP
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Source:** converted from the superpowers plan "DeptQ v3 — Team Collaboration MVP Implementation Plan" (2026-08-12) to the `.scratch/` issue-tracker convention on 2026-08-18.
+> **Status:** Not started — 11 open tickets. Plan only; no code written.
 
-**Goal:** Turn the dormant `CollectionMember` model into a working, minimal team-collaboration flow — invite teammates to a collection, give them scoped access, and make DeptQ genuinely usable as "one knowledge base per department." Bundles low-effort hardening (upload cap + rate limits).
+## Goal
 
-**Decisions** (from design session, 2026-08-12 — grilling skill, all questions settled):
+Turn the dormant `CollectionMember` model into a working, minimal team-collaboration flow — invite teammates to a collection, give them scoped access, and make DeptQ genuinely usable as "one knowledge base per department." Bundles low-effort hardening (upload cap + rate limits).
+
+## Decisions (design session 2026-08-12 — grilling skill, all questions settled)
 
 - Flat model: **no Organization entity**. Collections stay owned by one user; owners invite members.
 - **Two roles** per collection: `owner` | `member`.
@@ -61,58 +64,14 @@
 
 - `src/types/index.ts` — add `CollectionMemberDTO` and `CollectionRole = "owner" | "member"`.
 
-## Tasks
-
-1. [ ] Add `src/lib/collection-access.ts` (`getCollectionAccess`) and refactor `collections` routes to use it.
-2. [ ] Add `POST /api/collections/[id]/join`.
-3. [ ] Add `GET /api/collections/[id]/members` and `DELETE /api/collections/[id]/members/[userId]` (owner-remove + self-leave).
-4. [ ] Tighten `DELETE /api/collections/[id]/documents/[documentId]` to uploader-or-owner.
-5. [ ] Add collection-membership re-check to `POST /api/chat`; include members + `isOwner` in `GET /api/collections/[id]` and list route responses.
-6. [ ] Add `src/lib/rate-limit.ts`; wire into `POST /api/chat` and `POST /api/upload`.
-7. [ ] Add 20 MB server-side cap in `/api/upload` (413) and client-side check in `upload-zone.tsx`.
-8. [ ] Build Members card UI on collection detail page (list, badges, copy-invite-link, remove/leave).
-9. [ ] Add Owner/Member badges to collections list/cards.
-10. [ ] Manual QA: run the curl probe list below; fix findings.
-11. [ ] Update `CONTEXT.md` (Member concept: roles, invite link, removal semantics) and README feature list if needed.
-
 ## Verification (manual QA)
 
-Two test accounts (`alice` = owner, `bob` = member). Probes:
-
-```bash
-# bob joins via static link
-curl -X POST localhost:3000/api/collections/<id>/join -b "bob_cookie"          # 200
-curl -X POST localhost:3000/api/collections/<id>/join -b "bob_cookie"          # 200 (idempotent)
-curl -X POST localhost:3000/api/collections/<id>/join -b "alice_cookie"        # 400 (owner)
-
-# members list visible to both
-curl localhost:3000/api/collections/<id>/members -b "alice_cookie"             # 200, includes bob
-curl localhost:3000/api/collections/<id>/members -b "bob_cookie"               # 200
-
-# bob adds his own doc, then removes it
-curl -X POST localhost:3000/api/collections/<id>/documents -b "bob_cookie" \
-  -H 'Content-Type: application/json' -d '{"documentId":"<bob_doc>"}'          # 200
-curl -X DELETE localhost:3000/api/collections/<id>/documents/<alice_doc> -b "bob_cookie"  # 403 (fixed)
-curl -X DELETE localhost:3000/api/collections/<id>/documents/<bob_doc> -b "bob_cookie"    # 200 (own doc)
-
-# chat scoped to collection works for bob; blocked after removal
-curl -X POST localhost:3000/api/chat -b "bob_cookie" ...                        # 200 while member
-curl -X DELETE localhost:3000/api/collections/<id>/members/<bob_id> -b "alice_cookie"     # 200
-curl -X POST localhost:3000/api/chat -b "bob_cookie" ...                        # 403 after removal
-
-# owner protections
-curl -X DELETE localhost:3000/api/collections/<id>/members/<alice_id> -b "bob_cookie"      # 403 (owner)
-curl -X DELETE localhost:3000/api/collections/<id>/members/<alice_id> -b "alice_cookie"    # 403 (can't remove owner)
-
-# hardening
-curl -F 'file=@big_25mb.pdf' localhost:3000/api/upload -b "alice_cookie"       # 413
-# 31st chat request within a minute                                             # 429
-```
+Two test accounts (`alice` = owner, `bob` = member). Probes: join idempotency (200/200/400-owner), members list visible to both, bob adds/removes only his own docs (403 on alice's), chat works while member then 403 after removal, owner protections (403), upload >20MB → 413, 31st chat request → 429. Full probe list in ticket 10.
 
 ## Acceptance Criteria
 
-- [ ] Bob can join via link, chat with the collection, add/remove only his own documents.
-- [ ] Removed members are blocked from collection retrieval on their next message (403).
-- [ ] Uploads > 20 MB rejected (413) and rate limits return 429 at thresholds.
-- [ ] Owner/Member badges visible; invite link copyable from the collection page.
-- [ ] No schema changes, no new dependencies.
+- Bob can join via link, chat with the collection, add/remove only his own documents.
+- Removed members are blocked from collection retrieval on their next message (403).
+- Uploads > 20 MB rejected (413) and rate limits return 429 at thresholds.
+- Owner/Member badges visible; invite link copyable from the collection page.
+- No schema changes, no new dependencies.

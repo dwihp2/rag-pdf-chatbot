@@ -352,7 +352,7 @@ Extend `src/lib/document-processor.ts` (currently PDF-only via `pdf-parse`).
 
 ## 📈 Roadmap
 
-**Current phase** — team collaboration MVP (plan: `docs/superpowers/plans/2026-08-12-deptq-team-collab-mvp.md`):
+**Current phase** — team collaboration MVP (spec: `.scratch/deptq-team-collab-mvp/spec.md`, tickets: `.scratch/deptq-team-collab-mvp/issues/`):
 
 - [ ] **Collection Sharing** — invite links, owner/member roles, member management, Owner/Member badges
 - [ ] **Hardening** — 20 MB upload cap, per-user rate limits on chat and upload

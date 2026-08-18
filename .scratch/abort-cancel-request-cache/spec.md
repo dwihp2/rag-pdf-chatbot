@@ -1,7 +1,7 @@
 # Spec: Abort In-Flight Requests & De-duplicate Reads on Navigation
 
-> **Status:** Ready for implementation (planning only — no code written yet)
-> **Scope:** Client-side only. Follows the grilling session on 2026-08-15 (all recommendations accepted).
+> **Source:** converted from the superpowers plan "Abort In-Flight Requests & De-duplicate Reads on Navigation" (2026-08-15) to the `.scratch/` issue-tracker convention on 2026-08-18.
+> **Status:** Ready for implementation — planning only, no code written. 5 open tickets.
 
 ## Problem Statement
 
@@ -13,18 +13,18 @@ From the user's perspective, navigation becomes responsive and cheap. Moving to 
 
 ## User Stories
 
-1. As a user, I want to navigate to another menu while a Chat's history is still loading, so that the slow request is cancelled instead of continuing in the background.
-2. As a user, I want the sidebar and the Floating Chat widget to show the same Chat history without firing duplicate network requests, so that opening the app costs one fetch, not two.
-3. As a user, I want the Document list shared between the Documents page and a Collection's detail page to be fetched once, so that visiting both surfaces doesn't re-download the same data.
-4. As a user, I want the Collection list to be reused when I navigate between the dashboard and the Collections page, so that switching menus is instant and cheap.
-5. As a user, I want lists to be fresh after I create or delete a Chat, upload a Document, or create/delete a Collection, so that they always reflect my latest actions.
-6. As a user, I want a cancelled request to never overwrite the UI after I've navigated away, so that stale data never pops into a screen I'm no longer looking at.
-7. As a user, I want to be able to leave a Chat while the assistant is still streaming an answer, so that generation stops and stops consuming tokens/server work instead of continuing in the background.
-8. As a user, I want opening a conversation from either the sidebar or the Floating Chat widget to stay consistent.
-9. As a user, I want authentication enforcement (redirect on 401) to keep working after these changes, so that my session is still protected.
-10. As a developer, I want the request cache to de-duplicate identical concurrent requests, so that accidental double-mounts (dev StrictMode, shared components) cost a single network call.
-11. As a developer, I want cached reads to expire after a short interval, so that stale data cannot persist indefinitely if a mutation is missed.
-12. As a developer, I want cancelled requests to be distinguishable from real failures, so that cancelled loads never surface as user-facing errors.
+1. Navigate to another menu while a Chat's history is still loading → slow request is cancelled instead of continuing in the background.
+2. Sidebar and Floating Chat widget show the same Chat history without duplicate network requests → opening the app costs one fetch, not two.
+3. Document list shared between the Documents page and a Collection's detail page is fetched once.
+4. Collection list reused when navigating between dashboard and Collections page → switching menus is instant and cheap.
+5. Lists are fresh after create/delete of a Chat, upload of a Document, or create/delete of a Collection.
+6. A cancelled request never overwrites the UI after navigating away → stale data never pops into a screen no longer being viewed.
+7. Leaving a Chat while the assistant is still streaming an answer stops generation and stops consuming tokens/server work.
+8. Opening a conversation from either the sidebar or the Floating Chat widget stays consistent.
+9. Authentication enforcement (redirect on 401) keeps working after these changes.
+10. (Dev) The request cache de-duplicates identical concurrent requests → accidental double-mounts (dev StrictMode, shared components) cost a single network call.
+11. (Dev) Cached reads expire after a short interval → stale data cannot persist indefinitely if a mutation is missed.
+12. (Dev) Cancelled requests are distinguishable from real failures → cancelled loads never surface as user-facing errors.
 
 ## Implementation Decisions
 
